@@ -1,0 +1,3 @@
+[submodule "3rd_party/Catch"]
+	path = 3rd_party/Catch
+	url = git@github.com:unixod/Catch.git
