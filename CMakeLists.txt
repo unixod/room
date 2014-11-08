@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 #===============================================================================
 # CMake configuration
 #===============================================================================
-option(WITH_TESTS  "Enable testing" OFF)
+option(WITH_TESTS   "Enable testing" OFF)
+option(USE_RE2C     "Use re2c (full path needed) to regenerate lexer")
 
 if(WITH_TESTS)
     enable_testing()

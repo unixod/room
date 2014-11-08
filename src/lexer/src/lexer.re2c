@@ -1,4 +1,4 @@
-B1;3603;0c// advanceBegin() = buffer->begin++;
+#include <sstream>
 
 void nextToken(const char *begin, const char *end) {
      
@@ -83,11 +83,3 @@ void nextToken(const char *begin, const char *end) {
 
 }
 
-
-int () {
-    std::uint8_t *buff = ...;
-    Input source(buff);
-    Lexer lexer(source);
-    while(auto token = lexer.nextToken(); token != EOF; token = lexer.nextToken()) {
-    }
-}
