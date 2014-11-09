@@ -1,10 +1,12 @@
 #include <sstream>
+#include <cstdint>
+#include "lexer.re2c.h"
 
 void nextToken(const char *begin, const char *end) {
-     
+#define YYCTYPE uint8_t
 #define GOTO_COND(condition_name) goto cond_##condition_name
-#define YYGETSTATE state
-#define YYSETSTATE(x) { state = (x); }
+#define YYGETCONDITION state
+#define YYSETCONDITION(x) { state = (x); }
      
      std::ostringstream acc; // accumulator
 
