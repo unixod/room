@@ -1,15 +1,17 @@
 project(lexer)
 cmake_minimum_required(VERSION 2.8)
 
-set(LEXER_RE2C_CPP lexer.re2c.cpp)
-set(LEXER_RE2C_H lexer.re2c.h)
+set(LEXER_RE2C_FILE             lexer.re2c)
+set(LEXER_RE2C_GEN_H            lexer.re2c.h)
+set(LEXER_RE2C_GEN_CPP          lexer.re2c.cpp)
+set(RE2C_GEN_FILES_LOCATION     pregenerated)
 
 if(USE_RE2C)
-    # where to store generated files
+    # where to store the generated files
     if(RE2C_OVERRIDE_SOURCES)
-        set(RE2C_OUTPUT_DIR ${CMAKE_CURRENT_LIST_DIR}/pregenerated)
+        set(RE2C_GEN_FILES_LOCATION ${CMAKE_CURRENT_LIST_DIR}/pregenerated)
     else()
-        set(RE2C_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+        set(RE2C_GEN_FILES_LOCATION ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
     if(NOT IS_ABSOLUTE ${USE_RE2C})
@@ -31,31 +33,23 @@ if(USE_RE2C)
     endif()
     unset(RE2C_VERSION)
 
-    add_custom_command(OUTPUT ${LEXER_RE2C_CPP}
-        COMMAND ${RE2C_EXECUTABLE} -c -o ${LEXER_RE2C_CPP} -t ${LEXER_RE2C_H} ${CMAKE_CURRENT_LIST_DIR}/lexer.re2c
-        WORKING_DIRECTORY ${RE2C_OUTPUT_DIR}
-        DEPENDS lexer.re2c
+    add_custom_command(OUTPUT ${RE2C_GEN_FILES_LOCATION}/${LEXER_RE2C_GEN_CPP}
+        COMMAND ${RE2C_EXECUTABLE} -c -o ${LEXER_RE2C_GEN_CPP} -t ${LEXER_RE2C_GEN_H} ${CMAKE_CURRENT_LIST_DIR}/${LEXER_RE2C_FILE}
+        WORKING_DIRECTORY ${RE2C_GEN_FILES_LOCATION}
+        DEPENDS ${LEXER_RE2C_FILE}
     )
-
-    set(LEXER_RE2C_CPP ${RE2C_OUTPUT_DIR}/${LEXER_RE2C_CPP})
-    include_directories(
-        ${RE2C_OUTPUT_DIR})
-else()
-    # use pregenerated sources
-    set(LEXER_RE2C_CPP ${RE2C_OUTPUT_DIR}/${LEXER_RE2C_CPP})
-    include_directories(
-        pregenerated)
 endif()
 
 include_directories(
     ${LEXER_SOURCE_DIR}
+    ${RE2C_GEN_FILES_LOCATION}
     ${ROOM_INCLUDE_DIR})
 
 set(LEXER_SOURCES
     lexer.cpp
-    ${LEXER_RE2C_CPP})
+    ${RE2C_GEN_FILES_LOCATION}/${LEXER_RE2C_GEN_CPP})
 
 add_library(${PROJECT_NAME} ${LEXER_SOURCES})
 
 showFilesInIDE(
-    lexer.re2c)
+    ${LEXER_RE2C_FILE})
