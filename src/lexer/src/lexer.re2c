@@ -1,10 +1,12 @@
-B1;3603;0c// advanceBegin() = buffer->begin++;
+#include <sstream>
+#include <cstdint>
+#include "lexer.re2c.h"
 
 void nextToken(const char *begin, const char *end) {
-     
+#define YYCTYPE uint8_t
 #define GOTO_COND(condition_name) goto cond_##condition_name
-#define YYGETSTATE state
-#define YYSETSTATE(x) { state = (x); }
+#define YYGETCONDITION state
+#define YYSETCONDITION(x) { state = (x); }
      
      std::ostringstream acc; // accumulator
 
@@ -83,11 +85,3 @@ void nextToken(const char *begin, const char *end) {
 
 }
 
-
-int () {
-    std::uint8_t *buff = ...;
-    Input source(buff);
-    Lexer lexer(source);
-    while(auto token = lexer.nextToken(); token != EOF; token = lexer.nextToken()) {
-    }
-}
