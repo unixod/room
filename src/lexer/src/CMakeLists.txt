@@ -52,4 +52,6 @@ set(LEXER_SOURCES
 add_library(${PROJECT_NAME} ${LEXER_SOURCES})
 
 showFilesInIDE(
+    ${ROOM_INCLUDE_DIR}/room/lexer.h
+    ${ROOM_INCLUDE_DIR}/room/source.h
     ${LEXER_RE2C_FILE})
