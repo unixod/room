@@ -47,6 +47,7 @@ include_directories(
 
 set(LEXER_SOURCES
     lexer.cpp
+    utils/source_string.cpp
     ${RE2C_GEN_FILES_LOCATION}/${LEXER_RE2C_GEN_CPP})
 
 add_library(${PROJECT_NAME} ${LEXER_SOURCES})
@@ -54,4 +55,6 @@ add_library(${PROJECT_NAME} ${LEXER_SOURCES})
 showFilesInIDE(
     ${ROOM_INCLUDE_DIR}/room/lexer.h
     ${ROOM_INCLUDE_DIR}/room/source.h
+    ${ROOM_INCLUDE_DIR}/room/utils/source_string.h
+#    ${ROOM_INCLUDE_DIR}/room/utils/source_file.h
     ${LEXER_RE2C_FILE})
