@@ -89,6 +89,6 @@
 #+BEGIN_EXAMPLE
   {a ...}
       like dec >> {a 'a '...}    "here we hide some simbols by quotation it"
-  {1 ...}
+  {'1 ...}                       "here (in perspective) quotation means exactess of symbol (i.e. prevent meaning as alias)"
       -> *
 #+END_EXAMPLE
