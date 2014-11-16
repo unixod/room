@@ -53,6 +53,9 @@ set(LEXER_SOURCES
 add_library(${PROJECT_NAME} ${LEXER_SOURCES})
 
 showFilesInIDE(
+    ${ROOM_INCLUDE_DIR}/room/core/token.h
+    ${ROOM_INCLUDE_DIR}/room/core/tokens/end.h
+    ${ROOM_INCLUDE_DIR}/room/core/tokens/atom.h
     ${ROOM_INCLUDE_DIR}/room/lexer.h
     ${ROOM_INCLUDE_DIR}/room/source.h
     ${ROOM_INCLUDE_DIR}/room/utils/source_string.h
