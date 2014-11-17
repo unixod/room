@@ -26,11 +26,38 @@ bool is(const std::unique_ptr<room::core::Token> &t) {
             std::add_const<T>::type *>(t.get());
 }
 
+std::string unescape(std::string lexeme) {
+
+    if ((lexeme.size() > 2) &&          // is multi-escaped
+            (lexeme.front() == '|') &&
+            (lexeme.back() == '|')) {
+        lexeme.erase(lexeme.size() - 1).erase(0, 1);
+    } else {
+        auto trash = std::remove(lexeme.begin(), lexeme.end(), '\\');
+        lexeme.erase(trash, lexeme.end());
+    }
+
+    return lexeme;
+}
+
 TEST_CASE("Atoms tokenization") {
-    // atoms lexemes variations
+    // atom lexemes variations
     const auto lexemes = std::vector<std::string>{
+        //
+        // simple atoms
+        //
         "a", "abc", "1a", "1abc"
         "a2", "a2bc", "1+2", "+",
+
+        //
+        // atoms with escaping
+        //
+        "\\a", "a\\ \\ b", "\\'",
+
+        //
+        // atoms with multi escaping
+        //
+        "|a|", "|a  b|", "|'|"
     };
 
     // concatenate ones into one string (room programm)
@@ -43,8 +70,8 @@ TEST_CASE("Atoms tokenization") {
 
     for (auto &lexeme : lexemes) {
         auto token = lexer.next();
-        CAPTURE(lexeme);
         REQUIRE(is<core::tokens::Atom>(token));
+//        REQUIRE(token.lexeme() == unescape(lexeme));
     }
 
     // End token verification
