@@ -1,13 +1,17 @@
 #ifndef ROOM_CORE_TOKENS_ATOM_H
 #define ROOM_CORE_TOKENS_ATOM_H
 
+#include <string>
 #include "room/core/token.h"
 
 namespace room {
 namespace core {
 namespace tokens {
 
-class Atom : public Token {};
+class Atom : public Token {
+public:
+    Atom(std::string){}
+};
 
 } // namespace tokens
 } // namespace core

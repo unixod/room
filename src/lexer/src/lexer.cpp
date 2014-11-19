@@ -9,6 +9,11 @@ room::Lexer::Lexer(std::unique_ptr<room::Source>)
 
 }
 
+bool room::Lexer::hasNext()
+{
+    return false;
+}
+
 std::unique_ptr<core::Token> room::Lexer::next()
 {
     return std::make_unique<core::tokens::End>();
