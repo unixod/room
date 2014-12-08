@@ -9,7 +9,10 @@ namespace core {
 namespace token {
 
 enum class Class {
-    Space, Atom, End
+    SpaceBegin,
+    SpaceEnd,
+    Atom,
+    End
 };
 
 typedef std::string Lexeme;
