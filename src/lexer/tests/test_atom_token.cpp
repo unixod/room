@@ -1,44 +1,18 @@
 #define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_SFINAE
 #include <catch.hpp>
 #include <sstream>
 #include <iterator>
 #include "room/lexer.h"
 #include "room/utils/source_string.h"
-#include "room/utils/make_unique.h"
-#include "room/core/tokens/atom.h"
-#include "room/core/tokens/end.h"
+#include "room/utils/c++14.h"
 
 namespace core = room::core;
 namespace utils = room::utils;
-namespace token = core::tokens;
+namespace token = room::core::token;
 
 /// Helpers
-template<class T>
-bool is(const room::core::Token *t) {
-    return dynamic_cast<typename
-            std::add_const<T>::type *>(t);
-}
-
-std::vector<std::unique_ptr<core::Token>>
-tokenize(std::string pgm) {
-    auto lexer = room::Lexer{
-        std::make_unique<utils::SourceString>(
-            pgm
-        )
-    };
-
-    std::vector<std::unique_ptr<core::Token>> out;
-
-    while(lexer.hasNext()) {
-        out.push_back(lexer.next());
-    }
-
-    return out;
-}
-
-
 std::string unescape(std::string lexeme) {
-
     if ((lexeme.size() > 2) &&          // is multi-escaped
             (lexeme.front() == '|') &&
             (lexeme.back() == '|')) {
@@ -51,65 +25,99 @@ std::string unescape(std::string lexeme) {
     return lexeme;
 }
 
+typedef std::vector<core::Token> TokenSet;
+
+TokenSet tokenize(std::string pgm) {
+    auto lexer = room::Lexer{
+        std::make_unique<utils::SourceString>(
+            pgm
+        )
+    };
+
+    TokenSet out;
+
+    while(lexer.hasNext()) {
+        out.push_back(lexer.next());
+    }
+
+    return out;
+}
+
 template<class... Tokens>
-std::vector<std::reference_wrapper<const core::Token>> tokens(Tokens&&... tokens) {
-    return {tokens...};
+std::tuple<Tokens...> tokens(Tokens&&... tokens) {
+    return std::forward_as_tuple(std::forward<Tokens>(tokens)...);
 }
 
-bool operator == (const std::vector<std::unique_ptr<core::Token>> &tokenized,
-                  const std::vector<std::reference_wrapper<const core::Token>> &expected) {
-    return tokenized.size() == expected.size() &&
-           std::equal(tokenized.begin(), tokenized.end(), expected.begin(),
-                      [] (const std::unique_ptr<core::Token> &givenToken, const core::Token &expectedToken){
-        return false;
-    });
+template<class Tokens, std::size_t... idx>
+bool compare(const TokenSet &tokenized, Tokens &&expected, std::index_sequence<idx...>) {
+    typedef typename std::remove_reference<Tokens>::type ExpectedSet;
+
+    auto cmps = {
+        tokenized[idx] == std::get<idx>(expected)
+        ...
+    };
+    return std::all_of(cmps.begin(), cmps.end(), [](bool v){return v;});
 }
 
+template<class Tokens, std::size_t idx = 0>
+bool operator == (const TokenSet &tokenized, Tokens &&expected) {
+    typedef typename std::remove_reference<Tokens>::type ExpectedSet;
+    constexpr auto expectedSetSize = std::tuple_size<ExpectedSet>::value;
+
+    return expectedSetSize == tokenized.size() &&
+            compare(tokenized, std::forward<Tokens>(expected),
+                    std::make_index_sequence<expectedSetSize>());
+}
+
+//template<class Ch, class Traits, class Tuple, std::size_t... idx>
+//void printTuple(std::basic_ostream<Ch, Traits> &out, const Tuple tpl, std::index_sequence<idx...>) {
+//    using swallow = int[];
+//    (void)swallow{0, (void(out << (idx == 0 ? "" : ",") << std::get<idx>(tpl)), 0)... };
+//}
+
+namespace std {
+//template<class... Tokens>
+//std::ostream & operator << (std::ostream &out, const std::tuple<Tokens...> &tokens) {
+//    out << "bobo";
+//    return out;
+//}
+
+std::ostream & operator << (std::ostream &out, const core::Token &token) {
+
+    switch(std::get<core::TokenClass>(token)) {
+    case core::token::Class::Space: out << "Space"; break;
+    case core::token::Class::Atom:  out << "Atom";  break;
+    case core::token::Class::End:   out << "End";   break;
+    default: out << "Unknown";
+    }
+
+    return out << "{" << std::get<core::TokenLexeme>(token) << "}";
+}
+}
 
 TEST_CASE("Atoms tokenization") {
-//    SECTION("in regular space") {
-//        // atom lexemes
-//        const auto lexemes = std::vector<std::string>{
-//            //
-//            // simple atoms
-//            //
-//            "a", "abc", "1a", "1abc"
-//            "a2", "a2bc", "1+2", "+",
-
-//            //
-//            // atoms with escaping
-//            //
-//            "\\a", "a\\ \\ b", "\\'",
-
-//            //
-//            // atoms with multi escaping
-//            //
-//            "|a|", "|a  b|", "|'|"
-//        };
-
-//        // concatenate ones into one string (room programm)
-//        std::ostringstream pgm;
-//        std::copy(lexemes.begin(),
-//                  lexemes.end(),
-//                  std::ostream_iterator<std::string>(pgm, " ")); // in this test we use blank space as delimiter of atoms
-
-//        auto lexer = tokenize(pgm.str());
-
-//        for (auto &lexeme : lexemes) {
-//            auto token = lexer.next();
-//            REQUIRE(is<core::tokens::Atom>(token));
-//    //        REQUIRE(token.lexeme() == unescape(lexeme));
-//        }
-
-//        // End token verification
-//        REQUIRE(is<core::tokens::End>(lexer.next()));
-//    }
-
     SECTION("in singular space") {
-        REQUIRE(tokenize("(abc)") == tokens(token::Atom{"a"}, token::Atom{"b"}, token::Atom{"c"}));
+        SECTION("without escaping") {
+            REQUIRE(tokenize("a abc") == tokens(core::Token{token::Class::Atom, "a"},
+                                                core::Token{token::Class::Atom, "abc"},
+                                                core::Token{token::Class::End, ""}));
+
+            REQUIRE(tokenize("1 12 32") == tokens(core::Token{token::Class::Atom, "1"},
+                                                  core::Token{token::Class::Atom, "12"},
+                                                  core::Token{token::Class::Atom, "32"},
+                                                  core::Token{token::Class::End, ""}));
+
+            REQUIRE(tokenize("1a a2b") == tokens(core::Token{token::Class::Atom, "1a"},
+                                                 core::Token{token::Class::Atom, "a2b"},
+                                                 core::Token{token::Class::End, ""}));
+
+            REQUIRE(tokenize(". ...") == tokens(core::Token{token::Class::Atom, "."},
+                                                core::Token{token::Class::Atom, "..."},
+                                                core::Token{token::Class::End, ""}));
+        }
     }
 
     SECTION("in singular space") {
-        FAIL("not implemented yet...");
+//        FAIL("not implemented yet...");
     }
 }

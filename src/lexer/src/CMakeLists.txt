@@ -60,5 +60,5 @@ showFilesInIDE(
     ${ROOM_INCLUDE_DIR}/room/source.h
     ${ROOM_INCLUDE_DIR}/room/utils/source_string.h
 #    ${ROOM_INCLUDE_DIR}/room/utils/source_file.h
-    ${ROOM_INCLUDE_DIR}/room/utils/make_unique.h
+    ${ROOM_INCLUDE_DIR}/room/utils/c++14.h
     ${LEXER_RE2C_FILE})

@@ -23,7 +23,7 @@ public:
      * @brief next returns the complete token from the lexer
      * @return token
      */
-    std::unique_ptr<core::Token> next();
+    core::Token next();
 };
 
 }
