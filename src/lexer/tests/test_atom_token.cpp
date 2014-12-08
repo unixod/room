@@ -29,14 +29,15 @@ namespace std {
 std::ostream & operator << (std::ostream &out, const core::Token &token) {
 
     switch(std::get<core::TokenClass>(token)) {
-    case core::token::Class::SpaceBegin: out << "SpaceBegin"; break;
-    case core::token::Class::SpaceEnd:   out << "SpaceEnd";   break;
-    case core::token::Class::Atom:       out << "Atom";       break;
-    case core::token::Class::End:        out << "End";        break;
-    default:                             out << "Unknown";
+    case token::Class::SpaceBegin: out << "SpaceBegin"; break;
+    case token::Class::SpaceEnd:   out << "SpaceEnd";   break;
+    case token::Class::Atom:       out << "Atom";       break;
+    case token::Class::End:        out << "End";        break;
+    default:                       out << "Unknown";
     }
 
-    return out << "{" << std::get<core::TokenLexeme>(token) << "}";
+    return std::get<core::TokenClass>(token) == token::Class::Atom ?
+                out << "{" << std::get<core::TokenLexeme>(token) << "}" : out;
 }
 }
 
@@ -86,8 +87,11 @@ TEST_CASE("Atoms tokenization") {
     }
 
     SECTION("in singular space") {
-        REQUIRE(tokenize("(abc)") == tokens(core::Token{token::Class::Atom, "a"},
-                                            core::Token{token::Class::Atom, "abc"},
+        REQUIRE(tokenize("(abc)") == tokens(core::Token{token::Class::SpaceBegin, ""},
+                                            core::Token{token::Class::Atom, "a"},
+                                            core::Token{token::Class::Atom, "b"},
+                                            core::Token{token::Class::Atom, "c"},
+                                            core::Token{token::Class::SpaceEnd, ""},
                                             core::Token{token::Class::End, ""}));
     }
 }
