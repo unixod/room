@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 # CMake configuration
 #===============================================================================
 option(WITH_TESTS               "Enable testing" OFF)
-option(USE_RE2C                 "Use re2c (full path needed) to regenerate lexer")
+option(USE_RE2C                 "Use re2c instead using preprocessed sources (full path needed) to regenerate lexer")
 option(RE2C_OVERRIDE_SOURCES    "Generate files in source dir (useful during development)")
 
 if(WITH_TESTS)
