@@ -1,16 +1,30 @@
 #include <sstream>
 #include <cstdint>
 #include "lexer.re2c.h"
+#include "room/core/token.h"
 
-void nextToken(const char *begin, const char *end) {
-#define YYCTYPE uint8_t
-#define GOTO_COND(condition_name) goto cond_##condition_name
-#define YYGETCONDITION state
-#define YYSETCONDITION(x) { state = (x); }
-     
-     std::ostringstream acc; // accumulator
+struct LexerState {
+    typedef uint8_t CharType;
+    const CharType *begin;
+    const CharType *end;
+    YYCONDTYPE cond;
+    void refill(std::size_t) {}
+};
+
+using namespace room::core;
+
+Token nextToken(LexerState state) {
+#   define GOTO_COND(condition_name) goto cond_##condition_name
+#   define YYGETCONDITION() state.cond
+#   define YYSETCONDITION(x) { state.cond = (x); }
+#   define YYFILL(x)  state.refill(x)
+
+    typedef LexerState::CharType YYCTYPE;
+    const YYCTYPE *YYCURSOR = state.begin;
+    const YYCTYPE *YYLIMIT = state.end;
 
 /*!re2c
+    re2c:indent:string = "    ";
     re2c:condprefix = cond_;
     re2c:condenumprefix =;
     re2c:yyfill:enable = 1;
@@ -26,14 +40,15 @@ void nextToken(const char *begin, const char *end) {
     //  COMMENT
     //  REGULAR_SPACE
     //  SINGULAR_SPACE
-    //  ATOM
     //  ESCAPED_ATOM
+    //  END
 
     ANY = [^];
-    MULTY_ESCAPE = '|';
     EOI = [\x00];
     NOT_EOI = [^\x00];
     NEITHER_EOI_NOR_QUOTA = [^'\x00];
+    MUTLI_ESCAPED_ATOM = "|" [^|\x00]+ "|";
+    ATOM = ([^'| \t\x00] | "\\" NOT_EOI)+;
 
     // Lexemes:
     COMMENT_DELIMITER = ["];
@@ -42,45 +57,39 @@ void nextToken(const char *begin, const char *end) {
     SINGULAR_SPACE_BEGIN = '(';
     SINGULAR_SPACE_END = ')';
 
-    //////////////////////////////////////////////////////////////
-    <COMMENT> EOI { return Error("unexpected end of input"); }
-    <COMMENT> COMMENT_DELIMITER :=> REGULAR_SPACE
-    <COMMENT> ANY :=> COMMENT
-
-    //////////////////////////////////////////////////////////////
-    <REGULAR_SPACE> EOI => END { return SpaceEnd; }
-    <REGULAR_SPACE> COMMENT_DELIMITER :=> COMMENT
-    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN => SINGULAR_SPACE { return SpaceBegin; }
-    <REGULAR_SPACE> REGULAR_SPACE_BEGIN { return SpaceBegin; }
-    <REGULAR_SPACE> REGULAR_SPACE_END { return SpaceEnd; }
-    <REGULAR_SPACE> ['] / [^ '\t\n] { return Quotation; }
-    <REGULAR_SPACE> [ \t\n] { GOTO_COND(REGULAR_SPACE); }
-    <REGULAR_SPACE> MULTY_ESCAPE / [^|] :=> ESCAPED_ATOM
-    <REGULAR_SPACE> "\\"  :=> ATOM
-    <REGULAR_SPACE> [^'|] => ATOM { acc << yych; GOTO_COND(ATOM); }
-    <REGULAR_SPACE> ANY { return Error("Unescaped symbol"); }
-
-    //////////////////////////////////////////////////////////////
-    //<SINGULAR_SPACE> EOI { return Error("unexpected end of input"); }
-    <SINGULAR_SPACE> ['] / [^'] { return Quotation; }
-    <SINGULAR_SPACE> "\\" ANY { return Atom(yych); }
-    <SINGULAR_SPACE> SINGULAR_SPACE_END => REGULAR_SPACE { return SpaceEnd; }
-    <SINGULAR_SPACE> [^'] { reutrn Atom(yych); }
-    <SINGULAR_SPACE> ANY {
-    return Error("Two consequent quotation marks does not allowed,"
-    "either first or second quotation mark must be escaped");
+    <COMMENT, SINGULAR_SPACE, ESCAPED_ATOM> EOI
+    {
+        --YYCURSOR; // put back the EOI
+        return {token::Class::Error, "unexpected end of input"};
     }
 
     //////////////////////////////////////////////////////////////
-    <ESCAPED_ATOM> EOI { return Error("unexpected end of input"); }
-    <ESCAPED_ATOM> MULTY_ESCAPE => REGULAR_SPACE { return Atom(acc.str()); }
-    <ESCAPED_ATOM> ANY { acc << yych; GOTO_COND(ESCAPED_ATOM); }
+    <COMMENT> COMMENT_DELIMITER :=> REGULAR_SPACE
+    <COMMENT> ANY               :=> COMMENT
 
     //////////////////////////////////////////////////////////////
-    <ATOM> EOI => END { return SpaceEnd; }
-    <ATOM> "\\" ANY { acc << yych; GOTO_COND(ATOM); }
-    <ATOM> [ \t\n] => REGULAR_SPACE { return Atom(acc.str()); }
-    <ATOM> ANY { acc << yych; GOTO_COND(ATOM); }
+    <REGULAR_SPACE> EOI                     { --YYCURSOR; return {token::Class::End, ""}; }
+    <REGULAR_SPACE> COMMENT_DELIMITER       :=> COMMENT
+    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return {token::Class::SpaceBegin, "("}; }
+    <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return {token::Class::SpaceBegin, "{"}; }
+    <REGULAR_SPACE> REGULAR_SPACE_END       { return {token::Class::SpaceEnd, "}"}; }
+    <REGULAR_SPACE> ['] / [^ '\t\n]         { return {token::Class::Quotation, "'"}; }
+    <REGULAR_SPACE> [ \t\n]                 { GOTO_COND(REGULAR_SPACE); }
+    <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return {token::Class::Atom, trimOne(buffer->begin, buffer->cursor)}; }
+    <REGULAR_SPACE> ATOM                    { return {token::Class::Atom, unescape(buffer->begin, buffer->cursor)}; }
+    <REGULAR_SPACE> ANY                     { return {token::Class::Error, "Unescaped symbol"}; }
+
+    //////////////////////////////////////////////////////////////
+    <SINGULAR_SPACE> ['] / [^']         { return {token::Class::Quotation, "'"}; }
+    <SINGULAR_SPACE> "\\" ANY           { return Atom(yych); }
+    <SINGULAR_SPACE> SINGULAR_SPACE_END => REGULAR_SPACE { return SpaceEnd; }
+    <SINGULAR_SPACE> [^']               { reutrn Atom(yych); }
+    <SINGULAR_SPACE> ANY
+    {
+        return {token::Class::Error,
+                "Two consequent quotation marks does not allowed,"
+                "either first or second quotation mark must be escaped"};
+    }
 */
 
 }
