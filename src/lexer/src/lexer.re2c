@@ -77,7 +77,7 @@ token::Class nextToken(LexerState state) {
     <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return token::Class::SpaceBegin; }
     <REGULAR_SPACE> REGULAR_SPACE_END       { return token::Class::SpaceEnd; }
     <REGULAR_SPACE> ['] / [^ '\t\n]         { return token::Class::Quotation; }
-    <REGULAR_SPACE> [ \t\n]                 { GOTO_COND(REGULAR_SPACE); }
+    <REGULAR_SPACE> [ \t\n]                 { ++state.lexemeStart; GOTO_COND(REGULAR_SPACE); }
     <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return token::Class::Atom; }
     <REGULAR_SPACE> ATOM                    { return token::Class::Atom; }
 
