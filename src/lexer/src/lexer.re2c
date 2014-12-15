@@ -6,6 +6,8 @@
 struct LexerState {
     typedef uint8_t CharType;
     const CharType *begin;
+    const CharType *lexemeStart;
+    const CharType *lexemeEnd;
     const CharType *end;
     YYCONDTYPE cond;
     void refill(std::size_t) {}
@@ -13,7 +15,7 @@ struct LexerState {
 
 using namespace room::core;
 
-Token nextToken(LexerState state) {
+token::Class nextToken(LexerState state) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
@@ -57,38 +59,36 @@ Token nextToken(LexerState state) {
     SINGULAR_SPACE_BEGIN = '(';
     SINGULAR_SPACE_END = ')';
 
-    <COMMENT, SINGULAR_SPACE, ESCAPED_ATOM> EOI
+    //////////////////////////////////////////////////////////////
+    <COMMENT, SINGULAR_SPACE> EOI
     {
         --YYCURSOR; // put back the EOI
-        return {token::Class::Error, "unexpected end of input"};
+        return token::Class::Error; // unexpected end of input
     }
 
     //////////////////////////////////////////////////////////////
-    <COMMENT> COMMENT_DELIMITER :=> REGULAR_SPACE
-    <COMMENT> ANY               :=> COMMENT
+    <COMMENT> COMMENT_DELIMITER             :=> REGULAR_SPACE
+    <COMMENT> ANY                           :=> COMMENT
 
     //////////////////////////////////////////////////////////////
-    <REGULAR_SPACE> EOI                     { --YYCURSOR; return {token::Class::End, ""}; }
+    <REGULAR_SPACE> EOI                     { --YYCURSOR; return token::Class::End; }
     <REGULAR_SPACE> COMMENT_DELIMITER       :=> COMMENT
-    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return {token::Class::SpaceBegin, "("}; }
-    <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return {token::Class::SpaceBegin, "{"}; }
-    <REGULAR_SPACE> REGULAR_SPACE_END       { return {token::Class::SpaceEnd, "}"}; }
-    <REGULAR_SPACE> ['] / [^ '\t\n]         { return {token::Class::Quotation, "'"}; }
+    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return token::Class::SpaceBegin; }
+    <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return token::Class::SpaceBegin; }
+    <REGULAR_SPACE> REGULAR_SPACE_END       { return token::Class::SpaceEnd; }
+    <REGULAR_SPACE> ['] / [^ '\t\n]         { return token::Class::Quotation; }
     <REGULAR_SPACE> [ \t\n]                 { GOTO_COND(REGULAR_SPACE); }
-    <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return {token::Class::Atom, trimOne(buffer->begin, buffer->cursor)}; }
-    <REGULAR_SPACE> ATOM                    { return {token::Class::Atom, unescape(buffer->begin, buffer->cursor)}; }
-    <REGULAR_SPACE> ANY                     { return {token::Class::Error, "Unescaped symbol"}; }
+    <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return token::Class::Atom; }
+    <REGULAR_SPACE> ATOM                    { return token::Class::Atom; }
 
     //////////////////////////////////////////////////////////////
-    <SINGULAR_SPACE> ['] / [^']         { return {token::Class::Quotation, "'"}; }
-    <SINGULAR_SPACE> "\\" ANY           { return Atom(yych); }
-    <SINGULAR_SPACE> SINGULAR_SPACE_END => REGULAR_SPACE { return SpaceEnd; }
-    <SINGULAR_SPACE> [^']               { reutrn Atom(yych); }
-    <SINGULAR_SPACE> ANY
+    <SINGULAR_SPACE> ['] / [^']             { return token::Class::Quotation; }
+    <SINGULAR_SPACE> "\\" ANY               { ++state.lexemeStart; return token::Class::Atom; }
+    <SINGULAR_SPACE> SINGULAR_SPACE_END     => REGULAR_SPACE { return token::Class::SpaceEnd; }
+    <SINGULAR_SPACE> [^']                   { return token::Class::Atom; }
+    <*> ANY
     {
-        return {token::Class::Error,
-                "Two consequent quotation marks does not allowed,"
-                "either first or second quotation mark must be escaped"};
+        return token::Class::Error; //sdf
     }
 */
 
