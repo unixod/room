@@ -10,6 +10,9 @@ namespace room {
 class Lexer {
 public:
     Lexer(std::unique_ptr<Source>);
+    Lexer(Lexer &&);
+
+    ~Lexer();
 
     /**
      * @brief hasNext check the token
@@ -24,6 +27,10 @@ public:
      * @return token
      */
     core::Token next();
+
+private:
+    class Private;
+    std::unique_ptr<Private> d_ptr;
 };
 
 }

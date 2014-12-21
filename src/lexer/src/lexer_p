@@ -1,7 +1,13 @@
+#ifndef ROOM_LEXER_PRIVATE_H
+#define ROOM_LEXER_PRIVATE_H
+
 #include <functional>
 #include <cstdint>
-#include "lexer.re2c.h"
+#include "lexer.re2c.conditions.h"
 #include "room/core/token.h"
+#include "room/lexer.h"
+
+namespace token = room::core::token;
 
 struct Re2CLexerState {
     typedef uint8_t CharType;
@@ -22,9 +28,16 @@ struct Re2CLexerState {
     const CharType *marker;
 };
 
-namespace token = room::core::token;
+namespace room {
 
-token::Class nextToken(Re2CLexerState &state, std::function<void(int)> refill) {
+class Lexer::Private {
+    token::Class nextToken(Re2CLexerState &state, std::function<void(int)> refill);
+
+    Re2CLexerState re2State;
+};
+
+
+token::Class Lexer::Private::nextToken(Re2CLexerState &state, std::function<void(int)> refill) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
@@ -86,4 +99,8 @@ token::Class nextToken(Re2CLexerState &state, std::function<void(int)> refill) {
     <*> ANY                                 { return token::Class::Error; }
 */
 }
+
+} // namespace room
+
+#endif // ROOM_LEXER_PRIVATE_H
 
