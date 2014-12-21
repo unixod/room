@@ -1,77 +1,72 @@
-#include <sstream>
+#include <functional>
 #include <cstdint>
 #include "lexer.re2c.h"
 #include "room/core/token.h"
 
-struct LexerState {
+struct Re2CLexerState {
     typedef uint8_t CharType;
-    const CharType *begin;
-    const CharType *lexemeStart;
-    const CharType *lexemeEnd;
-    const CharType *end;
     YYCONDTYPE cond;
-    void refill(std::size_t) {}
+
+    // when refilling, piece between
+    // the lexemeStart and lexemeEnd
+    // may be stored in temporary
+    // storage as needed, and in final
+    // concatenated with tail of lexeme
+    const CharType *lexemeStart;
+
+    // when refilling, the following
+    // pointers should be adjusted
+    const CharType *lexemeEnd;
+    const CharType *inputBufferEnd;
+    const CharType *ctxMarker;
+    const CharType *marker;
 };
 
-using namespace room::core;
+namespace token = room::core::token;
 
-token::Class nextToken(LexerState state) {
+token::Class nextToken(Re2CLexerState &state, std::function<void(int)> refill) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
-#   define YYFILL(x)  state.refill(x)
-
-    typedef LexerState::CharType YYCTYPE;
-    const YYCTYPE *YYCURSOR = state.begin;
-    const YYCTYPE *YYLIMIT = state.end;
+#   define YYFILL(x)  refill(x)
 
 /*!re2c
-    re2c:indent:string = "    ";
-    re2c:condprefix = cond_;
-    re2c:condenumprefix =;
-    re2c:yyfill:enable = 1;
+    re2c:indent:string      =   "    ";
+    re2c:condprefix         =   cond_;
+    re2c:condenumprefix     =   ;
+    re2c:yyfill:enable      =   1;
+    re2c:define:YYCURSOR    =   state.lexemeEnd;
+    re2c:define:YYLIMIT     =   state.inputBufferEnd;
+    re2c:define:YYCTXMARKER =   state.ctxMarker;
+    re2c:define:YYMARKER    =   state.marker;
+    re2c:define:YYCTYPE     =   Re2CLexerState::CharType;
 
-    // Tokens:
-    //  Error
-    //  Atom
-    //  Quotation
-    //  SpaceBegin
-    //  SpaceEnd
-
-    // Conditions:
-    //  COMMENT
-    //  REGULAR_SPACE
-    //  SINGULAR_SPACE
-    //  ESCAPED_ATOM
-    //  END
-
-    ANY = [^];
-    EOI = [\x00];
-    NOT_EOI = [^\x00];
-    NEITHER_EOI_NOR_QUOTA = [^'\x00];
-    MUTLI_ESCAPED_ATOM = "|" [^|\x00]+ "|";
-    ATOM = ([^'| \t\x00] | "\\" NOT_EOI)+;
-
+    ///////////////////////////////////////////////////////////////////////////
     // Lexemes:
-    COMMENT_DELIMITER = ["];
-    REGULAR_SPACE_BEGIN = '}';
-    REGULAR_SPACE_END = '}';
-    SINGULAR_SPACE_BEGIN = '(';
-    SINGULAR_SPACE_END = ')';
+    ANY                     =   [^];
+    EOI                     =   [\x00];     // end of input
+    NOT_EOI                 =   [^\x00];
+    COMMENT_DELIMITER       =   ["];
+    REGULAR_SPACE_BEGIN     =   '}';
+    REGULAR_SPACE_END       =   '}';
+    SINGULAR_SPACE_BEGIN    =   '(';
+    SINGULAR_SPACE_END      =   ')';
+    MUTLI_ESCAPED_ATOM      =   "|" [^|\x00]+ "|";
+    ATOM                    =   ([^'| \t\x00] | "\\" NOT_EOI)+;
 
-    //////////////////////////////////////////////////////////////
-    <COMMENT, SINGULAR_SPACE> EOI
-    {
-        --YYCURSOR; // put back the EOI
-        return token::Class::Error; // unexpected end of input
-    }
+    ///////////////////////////////////////////////////////////////////////////
+    // Notes:
+    //  --state.lexemeEnd   -   means "put back the consumed symbol"
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    <COMMENT, SINGULAR_SPACE> EOI           { --state.lexemeEnd; return token::Class::Error; }
 
-    //////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     <COMMENT> COMMENT_DELIMITER             :=> REGULAR_SPACE
     <COMMENT> ANY                           :=> COMMENT
 
-    //////////////////////////////////////////////////////////////
-    <REGULAR_SPACE> EOI                     { --YYCURSOR; return token::Class::End; }
+    ///////////////////////////////////////////////////////////////////////////
+    <REGULAR_SPACE> EOI                     { --state.lexemeEnd; return token::Class::End; }
     <REGULAR_SPACE> COMMENT_DELIMITER       :=> COMMENT
     <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return token::Class::SpaceBegin; }
     <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return token::Class::SpaceBegin; }
@@ -81,16 +76,14 @@ token::Class nextToken(LexerState state) {
     <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return token::Class::Atom; }
     <REGULAR_SPACE> ATOM                    { return token::Class::Atom; }
 
-    //////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     <SINGULAR_SPACE> ['] / [^']             { return token::Class::Quotation; }
     <SINGULAR_SPACE> "\\" ANY               { ++state.lexemeStart; return token::Class::Atom; }
     <SINGULAR_SPACE> SINGULAR_SPACE_END     => REGULAR_SPACE { return token::Class::SpaceEnd; }
     <SINGULAR_SPACE> [^']                   { return token::Class::Atom; }
-    <*> ANY
-    {
-        return token::Class::Error; //sdf
-    }
-*/
 
+    ///////////////////////////////////////////////////////////////////////////
+    <*> ANY                                 { return token::Class::Error; }
+*/
 }
 
