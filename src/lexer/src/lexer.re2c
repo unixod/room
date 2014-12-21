@@ -28,18 +28,18 @@ token::Class nextToken(Re2CLexerState &state, std::function<void(int)> refill) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
-#   define YYFILL(x)  refill(x)
 
 /*!re2c
     re2c:indent:string      =   "    ";
     re2c:condprefix         =   cond_;
     re2c:condenumprefix     =   ;
     re2c:yyfill:enable      =   1;
+    re2c:define:YYCTYPE     =   Re2CLexerState::CharType;
     re2c:define:YYCURSOR    =   state.lexemeEnd;
     re2c:define:YYLIMIT     =   state.inputBufferEnd;
     re2c:define:YYCTXMARKER =   state.ctxMarker;
     re2c:define:YYMARKER    =   state.marker;
-    re2c:define:YYCTYPE     =   Re2CLexerState::CharType;
+    re2c:define:YYFILL      =   refill;
 
     ///////////////////////////////////////////////////////////////////////////
     // Lexemes:
