@@ -2,6 +2,7 @@
 #define ROOM_LEXER_PRIVATE_H
 
 #include <functional>
+#include <vector>
 #include <cstdint>
 #include "lexer.re2c.conditions.h"
 #include "room/core/token.h"
@@ -9,7 +10,10 @@
 
 namespace token = room::core::token;
 
-struct Re2CLexerState {
+namespace room {
+namespace details {
+
+struct Re2cLexerState {
     typedef uint8_t CharType;
     YYCONDTYPE cond;
 
@@ -18,36 +22,32 @@ struct Re2CLexerState {
     // may be stored in temporary
     // storage as needed, and in final
     // concatenated with tail of lexeme
-    const CharType *lexemeStart;
+    CharType *lexemeStart;
 
     // when refilling, the following
     // pointers should be adjusted
-    const CharType *lexemeEnd;
-    const CharType *inputBufferEnd;
-    const CharType *ctxMarker;
-    const CharType *marker;
+    CharType *lexemeEnd;
+    CharType *inputBufferEnd;
+    CharType *ctxMarker;
+    CharType *marker;
 };
 
-namespace room {
-
-class Lexer::Private {
-    token::Class nextToken(Re2CLexerState &state, std::function<void(int)> refill);
-
-    Re2CLexerState re2State;
-};
-
-
-token::Class Lexer::Private::nextToken(Re2CLexerState &state, std::function<void(int)> refill) {
+token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> refill) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
+
+    // in reffiling function we use algorithm which finds
+    // the closest to the state.lexemeStart pointer
+    state.ctxMarker = state.inputBufferEnd;
+    state.marker = state.inputBufferEnd;
 
 /*!re2c
     re2c:indent:string      =   "    ";
     re2c:condprefix         =   cond_;
     re2c:condenumprefix     =   ;
     re2c:yyfill:enable      =   1;
-    re2c:define:YYCTYPE     =   Re2CLexerState::CharType;
+    re2c:define:YYCTYPE     =   Re2cLexerState::CharType;
     re2c:define:YYCURSOR    =   state.lexemeEnd;
     re2c:define:YYLIMIT     =   state.inputBufferEnd;
     re2c:define:YYCTXMARKER =   state.ctxMarker;
@@ -99,6 +99,44 @@ token::Class Lexer::Private::nextToken(Re2CLexerState &state, std::function<void
     <*> ANY                                 { return token::Class::Error; }
 */
 }
+
+} // namespace details
+
+
+class Lexer::Private {
+public:
+    Private(std::streambuf *sb, std::size_t internalBufferSize)
+        : source(sb), buffer(internalBufferSize)
+    {
+        re2cState.cond = YYCONDTYPE::REGULAR_SPACE;
+        re2cState.inputBufferEnd = &buffer.back();
+        re2cState.lexemeStart = re2cState.inputBufferEnd;
+        re2cState.lexemeEnd = re2cState.inputBufferEnd;
+        re2cState.ctxMarker = re2cState.inputBufferEnd;
+        re2cState.marker = re2cState.inputBufferEnd;
+    }
+
+    void refill(std::size_t n) {
+        auto *base = &buffer.front();
+
+        auto skippedHeadSize = std::distance(re2cState.lexemeStart, base);
+        auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
+                                                                                  std::min(re2cState.ctxMarker, re2cState.marker)));
+
+        if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
+            std::copy(base + skippedHeadSize, re2cState.inputBufferEnd, base);
+        } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
+
+        } else {
+            throw "ooo";
+        }
+    }
+
+
+    std::streambuf *source;
+    std::vector<details::Re2cLexerState::CharType> buffer;
+    details::Re2cLexerState re2cState;
+};
 
 } // namespace room
 

@@ -68,16 +68,16 @@ core::Token spaceEnd() {
 }
 
 Tokens tokenize(std::string pgm) {
+    std::istringstream src{pgm};
     auto lexer = room::Lexer{
-        std::make_unique<utils::SourceString>(
-            pgm
-        )
+        src
     };
 
     Tokens out;
+    core::Token token;
 
-    while(lexer.hasNext()) {
-        out.push_back(lexer.next());
+    while(lexer >> token) {
+        out.push_back(token);
     }
 
     return out;
