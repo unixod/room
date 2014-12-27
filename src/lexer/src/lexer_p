@@ -123,19 +123,77 @@ public:
         auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
                                                                                   std::min(re2cState.ctxMarker, re2cState.marker)));
 
-        if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
-            std::copy(base + skippedHeadSize, re2cState.inputBufferEnd, base);
-        } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
+        /*
+         * buffer: xxxxllllllllee
+         *
+         * legend:
+         *     xxxx     -   skippedHeadSize elements
+         *     llllllll -   passedLexemePartSize elements
+         *     ee       -   elements pointed by the re2cState.inputBufferEnd
+         */
 
+        if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
+            n = skippedHeadSize;
+
+            /*
+             * xxxxllllllllee
+             *     <--- shift to the left, by erasing the xxxx
+             *
+             * after the shifting:
+             * llllllllee????
+             *
+             * legend:
+             *   ????   -   elements which need to be filled
+             */
+            std::copy(base + n, re2cState.inputBufferEnd, base);
+
+        } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
+            n = skippedHeadSize + passedLexemePartSize;
+
+            /*
+             * xxxxllllllllee
+             *      \____/
+             *         \    copy to the stash
+             *          v
+             *         stash
+             */
+            std::copy(re2cState.lexemeStart, re2cState.lexemeStart + passedLexemePartSize, std::back_inserter(stash));
+
+            /*
+             * xxxxllllllllee
+             *             <-- shift to the left, by erasing the xxxxllllllll
+             *
+             * after the shifting:
+             * ee????????????
+             *
+             * legend:
+             *   ????   -   elements which need to be filled
+             */
+            std::copy(base + n, re2cState.inputBufferEnd, base);
         } else {
             throw "ooo";
         }
+
+        // actualize stat-pointers
+        re2cState.lexemeStart -= n;
+        re2cState.lexemeEnd -= n;
+        re2cState.ctxMarker -= n;
+        re2cState.marker -= n;
     }
 
 
     std::streambuf *source;
     std::vector<details::Re2cLexerState::CharType> buffer;
     details::Re2cLexerState re2cState;
+
+    /**
+     * @brief stash - lengthy lexemes prefix
+     *
+     * for variable-length lexemes (such as atoms), which size exceed the size of the buffer
+     * in such case, after the token-processing will be done, the stash will be contain the
+     * preffix of the lexeme.
+     */
+    std::string stash;
 };
 
 } // namespace room
