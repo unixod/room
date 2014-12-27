@@ -17,12 +17,23 @@ room::Lexer::~Lexer()
 
 room::Lexer & room::Lexer::operator >> (core::Token &token)
 {
-    std::get<core::TokenClass>(token) = details::nextToken(d_ptr->re2cState, [&](std::size_t n){ d_ptr->refill(n); });
-//    return std::get<core::TokenClass>(d_ptr->token) == token::Class::End;
+    if (not d_ptr->atEnd) {
+        std::get<core::TokenClass>(token) = details::nextToken(d_ptr->re2cState, [&](std::size_t n){ d_ptr->refill(n); });
+        if (std::get<core::TokenClass>(token) != core::token::Class::End) {
+            // following two lines are equal to:
+            // std::get<core::TokenLexeme>(token) = d_ptr->stash + std::string{re2cState.lexemeStart, re2cState.lexemeEnd};
+            d_ptr->stash.append(d_ptr->re2cState.lexemeStart, d_ptr->re2cState.lexemeEnd);
+            std::swap(std::get<core::TokenLexeme>(token), d_ptr->stash);
+            d_ptr->stash.clear();
+        } else {
+            d_ptr->atEnd = true;
+        }
+    }
+
     return *this;
 }
 
 room::Lexer::operator bool() const
 {
-//    return d_ptr->source == d_ptr->sourceEnd;
+    return not d_ptr->atEnd;
 }

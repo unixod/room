@@ -39,6 +39,7 @@ token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> r
 
     // in reffiling function we use algorithm which finds
     // the closest to the state.lexemeStart pointer
+    state.lexemeStart = state.lexemeEnd;
     state.ctxMarker = state.inputBufferEnd;
     state.marker = state.inputBufferEnd;
 
@@ -109,7 +110,7 @@ public:
         : source(sb), buffer(internalBufferSize)
     {
         re2cState.cond = YYCONDTYPE::REGULAR_SPACE;
-        re2cState.inputBufferEnd = &buffer.back();
+        re2cState.inputBufferEnd = buffer.data() + buffer.size();
         re2cState.lexemeStart = re2cState.inputBufferEnd;
         re2cState.lexemeEnd = re2cState.inputBufferEnd;
         re2cState.ctxMarker = re2cState.inputBufferEnd;
@@ -117,9 +118,9 @@ public:
     }
 
     void refill(std::size_t n) {
-        auto *base = &buffer.front();
+        auto *base = buffer.data();
 
-        auto skippedHeadSize = std::distance(re2cState.lexemeStart, base);
+        auto skippedHeadSize = std::distance(base, re2cState.lexemeStart);
         auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
                                                                                   std::min(re2cState.ctxMarker, re2cState.marker)));
 
@@ -199,6 +200,7 @@ public:
      * preffix of the lexeme.
      */
     std::string stash;
+    bool atEnd = false;
 };
 
 } // namespace room

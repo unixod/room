@@ -84,24 +84,22 @@ Tokens tokenize(std::string pgm) {
 }
 
 TEST_CASE("Atoms tokenization") {
-    SECTION("in singular space") {
+    SECTION("in regular space") {
         SECTION("without escaping") {
-            REQUIRE(tokenize("a abc") == tok::set(tok::atom("a"), tok::atom("abc"), tok::end()));
-            REQUIRE(tokenize("1 12 32") == tok::set(tok::atom("1"), tok::atom("12"), tok::atom("32"), tok::end()));
-            REQUIRE(tokenize("1a a2b") == tok::set(tok::atom("1a"), tok::atom("a2b"), tok::end()));
-            REQUIRE(tokenize(". ...") == tok::set(tok::atom("."), tok::atom("..."), tok::end()));
+            REQUIRE(tokenize("a abc") == tok::set(tok::atom("a"), tok::atom("abc")));
+            REQUIRE(tokenize("1 12 32") == tok::set(tok::atom("1"), tok::atom("12"), tok::atom("32")));
+            REQUIRE(tokenize("1a a2b") == tok::set(tok::atom("1a"), tok::atom("a2b")));
+            REQUIRE(tokenize(". ...") == tok::set(tok::atom("."), tok::atom("...")));
         }
     }
 
     SECTION("in singular space") {
         REQUIRE(tokenize("(abc)") == tok::set(tok::spaceBegin(),
                                               tok::atom("a"), tok::atom("b"), tok::atom("c"),
-                                              tok::spaceEnd(),
-                                              tok::end()));
+                                              tok::spaceEnd()));
 
         REQUIRE(tokenize("(a abc)") == tok::set(tok::spaceBegin(),
                                                 tok::atom("a"), tok::atom(" "), tok::atom("a"), tok::atom("b"), tok::atom("c"),
-                                                tok::spaceEnd(),
-                                                tok::end()));
+                                                tok::spaceEnd()));
     }
 }
