@@ -129,9 +129,8 @@ public:
          * legend:
          *     xxxx     -   skippedHeadSize elements
          *     llllllll -   passedLexemePartSize elements
-         *     ee       -   elements pointed by the re2cState.inputBufferEnd
+         *     ee       -   elements pointed by the either re2cState.lexemeEnd, re2cState.ctxMarker or re2cState.marker
          */
-
         if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
             n = skippedHeadSize;
 
@@ -147,6 +146,11 @@ public:
              */
             std::copy(base + n, re2cState.inputBufferEnd, base);
 
+            // actualize state-pointers
+            re2cState.lexemeStart -= n;
+            re2cState.lexemeEnd -= n;
+            re2cState.ctxMarker -= n;
+            re2cState.marker -= n;
         } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
             n = skippedHeadSize + passedLexemePartSize;
 
@@ -169,16 +173,18 @@ public:
              * legend:
              *   ????   -   elements which need to be filled
              */
-            std::copy(base + n, re2cState.inputBufferEnd, base);
+            std::copy(base + n, re2cState.lexemeEnd, base);
+
+            // actualize state-pointers
+            re2cState.lexemeStart = base;
+            re2cState.lexemeEnd -= n;
+            re2cState.ctxMarker -= n;
+            re2cState.marker -= n;
         } else {
-            throw "ooo";
+            throw std::runtime_error{"Lexer::Private::refill, can't find the enough space for refilling"};
         }
 
-        // actualize stat-pointers
-        re2cState.lexemeStart -= n;
-        re2cState.lexemeEnd -= n;
-        re2cState.ctxMarker -= n;
-        re2cState.marker -= n;
+
     }
 
 
