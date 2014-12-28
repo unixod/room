@@ -66,7 +66,7 @@ token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> r
     SINGULAR_SPACE_BEGIN    =   '(';
     SINGULAR_SPACE_END      =   ')';
     MUTLI_ESCAPED_ATOM      =   "|" [^|\x00]+ "|";
-    ATOM                    =   ([^'| \t\x00] | "\\" NOT_EOI)+;
+    ATOM                    =   ([^('| \t\x00] | "\\" NOT_EOI) ([^(| \t\x00] | "\\" NOT_EOI)*;   // atom can include non-escaped quotation in non-begining position
 
     ///////////////////////////////////////////////////////////////////////////
     // Notes:
@@ -101,6 +101,17 @@ token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> r
 */
 }
 
+template<class II, class OI>
+void unescape(II first, II last, OI result) {
+    if (*first == '|') {
+        if (std::distance(first, last) > 2) {
+            std::copy(std::next(first), std::prev(last), result);
+        }
+    } else {
+        std::copy(first, last, result);
+    }
+}
+
 } // namespace details
 
 
@@ -117,81 +128,9 @@ public:
         re2cState.marker = re2cState.inputBufferEnd;
     }
 
-    void refill(std::size_t n) {
-        auto *base = buffer.data();
+    void refill(std::size_t);
 
-        auto skippedHeadSize = std::distance(base, re2cState.lexemeStart);
-        auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
-                                                                                  std::min(re2cState.ctxMarker, re2cState.marker)));
-
-        /*
-         * buffer: xxxxllllllllee
-         *
-         * legend:
-         *     xxxx     -   skippedHeadSize elements
-         *     llllllll -   passedLexemePartSize elements (this region pointed by re2cState.lexemeStart)
-         *     ee       -   elements pointed by the either re2cState.lexemeEnd, re2cState.ctxMarker or re2cState.marker
-         */
-        if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
-            n = skippedHeadSize;
-
-            /*
-             * xxxxllllllllee
-             *     <--- shift to the left, by erasing the xxxx
-             *
-             * after the shifting:
-             * llllllllee????
-             *
-             * legend:
-             *   ????   -   elements which need to be filled
-             */
-            std::copy(base + n, re2cState.inputBufferEnd, base);
-        } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
-            n = skippedHeadSize + passedLexemePartSize;
-
-            /*
-             * xxxxllllllllee
-             *      \____/
-             *         \    copy to the stash
-             *          v
-             *         stash
-             */
-            std::copy(re2cState.lexemeStart, re2cState.lexemeStart + passedLexemePartSize, std::back_inserter(stash));
-
-            /*
-             * xxxxllllllllee
-             *             <-- shift to the left, by erasing the xxxxllllllll
-             *
-             * after the shifting:
-             * ee????????????
-             *
-             * legend:
-             *   ????   -   elements which need to be filled
-             */
-            std::copy(base + n, re2cState.lexemeEnd, base);
-        } else {
-            throw std::runtime_error{"Lexer::Private::refill, can't find the enough space for refilling"};
-        }
-
-        // actualize state-pointers
-        re2cState.lexemeStart = base;
-        re2cState.lexemeEnd -= n;
-        re2cState.ctxMarker -= n;
-        re2cState.marker -= n;
-
-
-        auto fillFrom = base + buffer.size() - n;
-        auto filled = source->sgetn(fillFrom, n);       // fill rest of buffer from source as much as possible
-
-        // if we filled fewer elements then we can (i.e. source ended), then fill rest elements by zero (see nextToken, EOI)
-        std::fill_n(fillFrom + filled, n - filled, 0);
-    }
-
-
-    std::streambuf *source;
-    std::vector<details::Re2cLexerState::CharType> buffer;
-    details::Re2cLexerState re2cState;
-
+public:
     /**
      * @brief stash - lengthy lexemes prefix
      *
@@ -201,7 +140,82 @@ public:
      */
     std::string stash;
     bool atEnd = false;
+    details::Re2cLexerState re2cState;
+
+private:
+    std::streambuf *source;
+    std::vector<details::Re2cLexerState::CharType> buffer;
 };
+
+void Lexer::Private::refill(std::size_t n) {
+    auto *base = buffer.data();
+
+    auto skippedHeadSize = std::distance(base, re2cState.lexemeStart);
+    auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
+                                                                              std::min(re2cState.ctxMarker, re2cState.marker)));
+
+    /*
+     * buffer: xxxxllllllllee
+     *
+     * legend:
+     *     xxxx     -   skippedHeadSize elements
+     *     llllllll -   passedLexemePartSize elements (this region pointed by re2cState.lexemeStart)
+     *     ee       -   elements pointed by the either re2cState.lexemeEnd, re2cState.ctxMarker or re2cState.marker
+     */
+    if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
+        n = skippedHeadSize;
+
+        /*
+         * xxxxllllllllee
+         *     <--- shift to the left, by erasing the xxxx
+         *
+         * after the shifting:
+         * llllllllee????
+         *
+         * legend:
+         *   ????   -   elements which need to be filled
+         */
+        std::copy(base + n, re2cState.inputBufferEnd, base);
+    } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
+        n = skippedHeadSize + passedLexemePartSize;
+
+        /*
+         * xxxxllllllllee
+         *      \____/
+         *         \    copy to the stash
+         *          v
+         *         stash
+         */
+        std::copy(re2cState.lexemeStart, re2cState.lexemeStart + passedLexemePartSize, std::back_inserter(stash));
+
+        /*
+         * xxxxllllllllee
+         *             <-- shift to the left, by erasing the xxxxllllllll
+         *
+         * after the shifting:
+         * ee????????????
+         *
+         * legend:
+         *   ????   -   elements which need to be filled
+         */
+        std::copy(base + n, re2cState.lexemeEnd, base);
+    } else {
+        throw std::runtime_error{"Lexer::Private::refill, can't find the enough space for refilling"};
+    }
+
+    // actualize state-pointers
+    re2cState.lexemeStart = base;
+    re2cState.lexemeEnd -= n;
+    re2cState.ctxMarker -= n;
+    re2cState.marker -= n;
+
+
+    auto fillFrom = base + buffer.size() - n;
+    auto filled = source->sgetn(fillFrom, n);       // fill rest of buffer from source as much as possible
+
+    // if we filled fewer elements then we can (i.e. source ended), then fill rest elements by zero (see nextToken, EOI)
+    std::fill_n(fillFrom + filled, n - filled, 0);
+}
 
 } // namespace room
 
