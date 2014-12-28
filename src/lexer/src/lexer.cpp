@@ -38,6 +38,11 @@ room::Lexer & room::Lexer::operator >> (core::Token &token)
     return *this;
 }
 
+std::size_t room::Lexer::currentOffset() const noexcept
+{
+    return d_ptr->currentOffset();
+}
+
 room::Lexer::operator bool() const
 {
     return not d_ptr->atEnd;

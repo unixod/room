@@ -107,7 +107,7 @@ void unescapeAtomLexeme(core::token::Lexeme &str) {
         if ((str.size() > 1) && (str.back() == '|')) {
             // removing the surrounding boundaries
             str.pop_back();
-            str.erase(0);
+            str.erase(0, 1);
         }
     } else {
         // removing back-slash espapes
@@ -126,10 +126,10 @@ void unescapeAtomLexeme(core::token::Lexeme &str) {
 class Lexer::Private {
 public:
     Private(std::streambuf *sb, std::size_t internalBufferSize)
-        : source(sb), buffer(internalBufferSize)
+        : _source(sb), _buffer(internalBufferSize)
     {
         re2cState.cond = YYCONDTYPE::REGULAR_SPACE;
-        re2cState.inputBufferEnd = buffer.data() + buffer.size();
+        re2cState.inputBufferEnd = _buffer.data() + _buffer.size();
         re2cState.lexemeStart = re2cState.inputBufferEnd;
         re2cState.lexemeEnd = re2cState.inputBufferEnd;
         re2cState.ctxMarker = re2cState.inputBufferEnd;
@@ -138,7 +138,14 @@ public:
 
     void refill(std::size_t);
 
-public:
+    /**
+     * @brief offset - describes the current offset (in global source) of the current lexeme.
+     * @return offset in global source.
+     *
+     * The informational function needed for Error messages, used by Lexer.
+     */
+    std::size_t currentOffset() const noexcept;
+
     /**
      * @brief stash - lengthy lexemes prefix
      *
@@ -147,16 +154,25 @@ public:
      * preffix of the lexeme.
      */
     core::token::Lexeme stash;
-    bool atEnd = false;
     details::Re2cLexerState re2cState;
+    bool atEnd = false;
+
 
 private:
-    std::streambuf *source;
-    std::vector<details::Re2cLexerState::CharType> buffer;
+    std::streambuf *_source;
+    std::vector<details::Re2cLexerState::CharType> _buffer;
+
+    std::size_t _offset = 0;    // informational variable, necessary for Error messages
 };
 
+std::size_t Lexer::Private::currentOffset() const noexcept {
+    const auto *base = _buffer.data();
+    const auto *lexemeStart = re2cState.lexemeStart;
+    return _offset  - _offset % _buffer.size() + std::distance(base, lexemeStart);
+}
+
 void Lexer::Private::refill(std::size_t n) {
-    auto *base = buffer.data();
+    auto *base = _buffer.data();
 
     auto skippedHeadSize = std::distance(base, re2cState.lexemeStart);
     auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
@@ -208,6 +224,7 @@ void Lexer::Private::refill(std::size_t n) {
          */
         std::copy(base + n, re2cState.lexemeEnd, base);
     } else {
+        // this can happen if the buffer size is fewer than maximum keyword length in the language
         throw std::runtime_error{"Lexer::Private::refill, can't find the enough space for refilling"};
     }
 
@@ -217,9 +234,9 @@ void Lexer::Private::refill(std::size_t n) {
     re2cState.ctxMarker -= n;
     re2cState.marker -= n;
 
-
-    auto fillFrom = base + buffer.size() - n;
-    auto filled = source->sgetn(fillFrom, n);       // fill rest of buffer from source as much as possible
+    auto fillFrom = base + _buffer.size() - n;
+    auto filled = _source->sgetn(fillFrom, n);       // fill rest of buffer from source as much as possible
+    _offset += filled;
 
     // if we filled fewer elements then we can (i.e. source ended), then fill rest elements by zero (see nextToken, EOI)
     std::fill_n(fillFrom + filled, n - filled, 0);

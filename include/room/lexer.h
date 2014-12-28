@@ -17,6 +17,7 @@ public:
 
     Lexer & operator >> (core::Token &);
     operator bool() const;
+    std::size_t currentOffset() const noexcept;
 
 private:
     class Private;
