@@ -22,9 +22,12 @@ room::Lexer & room::Lexer::operator >> (core::Token &token)
 
         tokenClass = details::nextToken(d_ptr->re2cState, [&](std::size_t n){ d_ptr->refill(n); });
         if (tokenClass != core::token::Class::End) {
-            // following two lines are equal to:
-            // std::get<core::TokenLexeme>(token) = d_ptr->stash + std::string{re2cState.lexemeStart, re2cState.lexemeEnd};
             d_ptr->stash.append(d_ptr->re2cState.lexemeStart, d_ptr->re2cState.lexemeEnd);
+
+            if (tokenClass == core::token::Class::Atom) {
+                details::unescapeAtomLexeme(d_ptr->stash);
+            }
+
             std::swap(std::get<core::TokenLexeme>(token), d_ptr->stash);
             d_ptr->stash.clear();
         } else {
