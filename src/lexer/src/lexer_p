@@ -1,0 +1,248 @@
+#ifndef ROOM_LEXER_PRIVATE_H
+#define ROOM_LEXER_PRIVATE_H
+
+#include <algorithm>
+#include <functional>
+#include <vector>
+#include <cstdint>
+#include "lexer.re2c.conditions.h"
+#include "room/core/token.h"
+#include "room/lexer.h"
+
+namespace token = room::core::token;
+
+namespace room {
+namespace details {
+
+struct Re2cLexerState {
+    typedef char CharType;
+    YYCONDTYPE cond;
+
+    // when refilling, piece between
+    // the lexemeStart and lexemeEnd
+    // may be stored in temporary
+    // storage as needed, and in final
+    // concatenated with tail of lexeme
+    CharType *lexemeStart;
+
+    // when refilling, the following
+    // pointers should be adjusted
+    CharType *lexemeEnd;
+    CharType *inputBufferEnd;
+    CharType *ctxMarker;
+    CharType *marker;
+};
+
+token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> refill) {
+#   define GOTO_COND(condition_name) goto cond_##condition_name
+#   define YYGETCONDITION() state.cond
+#   define YYSETCONDITION(x) { state.cond = (x); }
+
+    // in reffiling function we use algorithm which finds
+    // the closest to the state.lexemeStart pointer
+    state.lexemeStart = state.lexemeEnd;
+    state.ctxMarker = state.inputBufferEnd;
+    state.marker = state.inputBufferEnd;
+
+/*!re2c
+    re2c:indent:string      =   "    ";
+    re2c:condprefix         =   cond_;
+    re2c:condenumprefix     =   ;
+    re2c:yyfill:enable      =   1;
+    re2c:define:YYCTYPE     =   Re2cLexerState::CharType;
+    re2c:define:YYCURSOR    =   state.lexemeEnd;
+    re2c:define:YYLIMIT     =   state.inputBufferEnd;
+    re2c:define:YYCTXMARKER =   state.ctxMarker;
+    re2c:define:YYMARKER    =   state.marker;
+    re2c:define:YYFILL      =   refill;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Lexemes:
+    ANY                     =   [^];
+    EOI                     =   [\x00];     // end of input
+    NOT_EOI                 =   [^\x00];
+    COMMENT_DELIMITER       =   ["];
+    REGULAR_SPACE_BEGIN     =   '}';
+    REGULAR_SPACE_END       =   '}';
+    SINGULAR_SPACE_BEGIN    =   '(';
+    SINGULAR_SPACE_END      =   ')';
+    MUTLI_ESCAPED_ATOM      =   "|" [^|\x00]+ "|";
+    ATOM                    =   ([^('| \t\x00] | "\\" NOT_EOI) ([^(| \t\x00] | "\\" NOT_EOI)*;   // atom can include non-escaped quotation in non-begining position
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Notes:
+    //  --state.lexemeEnd   -   means "put back the consumed symbol"
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    <COMMENT, SINGULAR_SPACE> EOI           { --state.lexemeEnd; return token::Class::Error; }
+
+    ///////////////////////////////////////////////////////////////////////////
+    <COMMENT> COMMENT_DELIMITER             :=> REGULAR_SPACE
+    <COMMENT> ANY                           :=> COMMENT
+
+    ///////////////////////////////////////////////////////////////////////////
+    <REGULAR_SPACE> EOI                     { --state.lexemeEnd; return token::Class::End; }
+    <REGULAR_SPACE> COMMENT_DELIMITER       :=> COMMENT
+    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return token::Class::SpaceBegin; }
+    <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return token::Class::SpaceBegin; }
+    <REGULAR_SPACE> REGULAR_SPACE_END       { return token::Class::SpaceEnd; }
+    <REGULAR_SPACE> ['] / [^ '\t\n]         { return token::Class::Quotation; }
+    <REGULAR_SPACE> [ \t\n]                 { ++state.lexemeStart; GOTO_COND(REGULAR_SPACE); }
+    <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return token::Class::Atom; }
+    <REGULAR_SPACE> ATOM                    { return token::Class::Atom; }
+
+    ///////////////////////////////////////////////////////////////////////////
+    <SINGULAR_SPACE> ['] / [^']             { return token::Class::Quotation; }
+    <SINGULAR_SPACE> "\\" ANY               { ++state.lexemeStart; return token::Class::Atom; }
+    <SINGULAR_SPACE> SINGULAR_SPACE_END     => REGULAR_SPACE { return token::Class::SpaceEnd; }
+    <SINGULAR_SPACE> [^']                   { return token::Class::Atom; }
+
+    ///////////////////////////////////////////////////////////////////////////
+    <*> ANY                                 { return token::Class::Error; }
+*/
+}
+
+void unescapeAtomLexeme(core::token::Lexeme &str) {
+    if (!str.empty() && (str.front() == '|')) {         // multiescaped atom
+        if ((str.size() > 1) && (str.back() == '|')) {
+            // removing the surrounding boundaries
+            str.pop_back();
+            str.erase(0, 1);
+        }
+    } else {
+        // removing back-slash espapes
+        bool escapeVisited = false;
+        auto trash = std::remove_if(str.begin(), str.end(), [&escapeVisited](core::token::Lexeme::value_type c){
+            escapeVisited = (c == '\\' && !escapeVisited);
+            return escapeVisited;
+        });
+        str.erase(trash, str.end());
+    }
+}
+
+} // namespace details
+
+
+class Lexer::Private {
+public:
+    Private(std::streambuf *sb, std::size_t internalBufferSize)
+        : _source(sb), _buffer(internalBufferSize)
+    {
+        re2cState.cond = YYCONDTYPE::REGULAR_SPACE;
+        re2cState.inputBufferEnd = _buffer.data() + _buffer.size();
+        re2cState.lexemeStart = re2cState.inputBufferEnd;
+        re2cState.lexemeEnd = re2cState.inputBufferEnd;
+        re2cState.ctxMarker = re2cState.inputBufferEnd;
+        re2cState.marker = re2cState.inputBufferEnd;
+    }
+
+    void refill(std::size_t);
+
+    /**
+     * @brief offset - describes the current offset (in global source) of the current lexeme.
+     * @return offset in global source.
+     *
+     * The informational function needed for Error messages, used by Lexer.
+     */
+    std::size_t currentOffset() const noexcept;
+
+    /**
+     * @brief stash - lengthy lexemes prefix
+     *
+     * for variable-length lexemes (such as atoms), which size exceed the size of the buffer
+     * in such case, after the token-processing will be done, the stash will be contain the
+     * preffix of the lexeme.
+     */
+    core::token::Lexeme stash;
+    details::Re2cLexerState re2cState;
+    bool atEnd = false;
+
+
+private:
+    std::streambuf *_source;
+    std::vector<details::Re2cLexerState::CharType> _buffer;
+
+    std::size_t _offset = 0;    // informational variable, necessary for Error messages
+};
+
+std::size_t Lexer::Private::currentOffset() const noexcept {
+    const auto *base = _buffer.data();
+    const auto *lexemeStart = re2cState.lexemeStart;
+    return _offset  - _offset % _buffer.size() + std::distance(base, lexemeStart);
+}
+
+void Lexer::Private::refill(std::size_t n) {
+    auto *base = _buffer.data();
+
+    auto skippedHeadSize = std::distance(base, re2cState.lexemeStart);
+    auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
+                                                                              std::min(re2cState.ctxMarker, re2cState.marker)));
+
+    /*
+     * buffer: xxxxllllllllee
+     *
+     * legend:
+     *     xxxx     -   skippedHeadSize elements
+     *     llllllll -   passedLexemePartSize elements (this region pointed by re2cState.lexemeStart)
+     *     ee       -   elements pointed by the either re2cState.lexemeEnd, re2cState.ctxMarker or re2cState.marker
+     */
+    if (n <= skippedHeadSize) { // we have enough space at beginning of the buffer, let's use it by shifting to the left the rest of the buffer
+        n = skippedHeadSize;
+
+        /*
+         * xxxxllllllllee
+         *     <--- shift to the left, by erasing the xxxx
+         *
+         * after the shifting:
+         * llllllllee????
+         *
+         * legend:
+         *   ????   -   elements which need to be filled
+         */
+        std::copy(base + n, re2cState.inputBufferEnd, base);
+    } else if (n <= (skippedHeadSize + passedLexemePartSize)) { // stash the passed part of the lexeme into the temporary space
+        n = skippedHeadSize + passedLexemePartSize;
+
+        /*
+         * xxxxllllllllee
+         *      \____/
+         *         \    copy to the stash
+         *          v
+         *         stash
+         */
+        std::copy(re2cState.lexemeStart, re2cState.lexemeStart + passedLexemePartSize, std::back_inserter(stash));
+
+        /*
+         * xxxxllllllllee
+         *             <-- shift to the left, by erasing the xxxxllllllll
+         *
+         * after the shifting:
+         * ee????????????
+         *
+         * legend:
+         *   ????   -   elements which need to be filled
+         */
+        std::copy(base + n, re2cState.lexemeEnd, base);
+    } else {
+        // this can happen if the buffer size is fewer than maximum keyword length in the language
+        throw std::runtime_error{"Lexer::Private::refill, can't find the enough space for refilling"};
+    }
+
+    // actualize state-pointers
+    re2cState.lexemeStart = base;
+    re2cState.lexemeEnd -= n;
+    re2cState.ctxMarker -= n;
+    re2cState.marker -= n;
+
+    auto fillFrom = base + _buffer.size() - n;
+    auto filled = _source->sgetn(fillFrom, n);       // fill rest of buffer from source as much as possible
+    _offset += filled;
+
+    // if we filled fewer elements then we can (i.e. source ended), then fill rest elements by zero (see nextToken, EOI)
+    std::fill_n(fillFrom + filled, n - filled, 0);
+}
+
+} // namespace room
+
+#endif // ROOM_LEXER_PRIVATE_H
+

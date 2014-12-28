@@ -11,8 +11,10 @@ namespace token {
 enum class Class {
     SpaceBegin,
     SpaceEnd,
+    Quotation,
     Atom,
-    End
+    End,
+    Error
 };
 
 typedef std::string Lexeme;
