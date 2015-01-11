@@ -2,7 +2,8 @@
  the first echo was emitted immediately, but the second will be
  wait the input (the emission can't be done until initialized space)."
 
-echo >> (What is your name?)
-
-{Your-name-is...} = (Your name is)
-echo >> {Your-name-is ...}
+{****...}
+  echo >> (What is your name?)
+  
+  {Your-name-is...} = (Your name is)
+  echo >> {Your-name-is ****}
