@@ -163,6 +163,8 @@
 #+END_EXAMPLE
 
 При резолвинге перспектив применяется (срабатывает) только *одна*, самая специфичная, (больше всего описывающая пространство) перспектива.
+*** Утверждение
+- Утверждение :: это [[Отражение][/отражение/]] LST-сущности.
 *** Отражение
 /Отражение/ - это LST-сущность отражающая тот или иной аспект room-системы. В Room, отражения встречаются в двух формах, это:
 1. Перспектива - отражает пространство, в котором прибывает субъект;
@@ -208,53 +210,47 @@
      {x. y} = {b}              "incorrect: x. is an alias of b, but y is nothing - which is imposible, because y doesn't dot-noted"
      {x. y z.} = {a b (cd) a}  "incorrect!, last a is left unmatched"
    #+END_EXAMPLE
-5) Цитирование атома в декларации, отменяет трактовку данного атома как алиаса, и вводит атомарное утверждение:
+5) Цитирование атома в отражении, отменяет трактовку данного атома как алиаса, и вводит атомарное утверждение:
    #+BEGIN_EXAMPLE
+     alias_to_x = x
+
      {
-         alias_to_x = x
+       'x = a             "there is no alias introducing, because x is quoted,
+                           it is not an alias, if a is not an alias to x,
+                           then this line leads to compile-time error,
+                           because the x and a is different attoms"
 
-         {
-             'x = a             "there is no alias introducing, because x is quoted,
-                                 it is not an alias, if a is not an alias to x,
-                                 then this line leads to compile-time error,
-                                 because the x and a is different attoms"
-
-             'x = alias_to_x    "ok, atomic-assertion"
-         } >> {...} 
-     }
+       'x = alias_to_x    "ok, atomic-assertion"
+     } >> {...} 
    #+END_EXAMPLE
 6) Если атом, упомянутый в декларации не является алиасом (т.е. до этого не был декларирован как алиас), то он становится алиасом:
    #+BEGIN_EXAMPLE
+     alias_to_x = x
+
      {
-         alias_to_x = x
+       x = a                      "alias introducing, now x is an alias of a"
 
-         {
-             x = a              "alias introducing, now x is an alias of a"
+       {'x d} = {alias_to_x 2}    "alias introducing, now d is an alias of 2,
+                                   x is quoted, and therefore it is an atomic-assertion"
 
-             {'x d} = {alias_to_x 2}    "alias introducing, now d is an alias of 2,
-                                         x is quoted, and therefore it is an atomic-assertion"
+       some >> {x ...}            "equals to some >> {a ...}"
 
-             some >> {x ...}    "equals to some >> {a ...}"
-
-         } >> {...}
-     }
+     } >> {...}
    #+END_EXAMPLE
 7) Если атом, упомянутый в декларации является алиасом (т.е. до этого был декларирован как алиас), то в данной декларации этот атом трактуется не как алиас а как атомарное утверждение сущности на который данный алиас ссылается:
    #+BEGIN_EXAMPLE
-     {
-         alias_to_x = x
-         x = a              "alias introducing, now x is an alias of a"
-         
-         {
-             x = a              "ok, atomic-asserion"     
-             x = alias_to_x     "equals to 'a = x, i.e. if a is not an alias to x,
-                                 then this line leads to compile-time error"
+     alias_to_x = x
+     x = a                "alias introducing, now x is an alias of a"
 
-             {x d} = {a 2}      "alias introducing, now d is an alias of 2,
-                                 x expands to 'a, and therefore it is an atomic-assertion,
-                                 it is equal to {'a d} = {a d}"
-         } >> {...}
-     }
+     {
+       x = a              "ok, atomic-asserion"     
+       x = alias_to_x     "equals to 'a = x, i.e. if a is not an alias to x,
+                           then this line leads to compile-time error"
+
+       {x d} = {a 2}      "alias introducing, now d is an alias of 2,
+                           x expands to 'a, and therefore it is an atomic-assertion,
+                           it is equal to {'a d} = {a d}"
+     } >> {...}
    #+END_EXAMPLE
 * Система модулей
 Room-система (программа) состоит из модулей.
