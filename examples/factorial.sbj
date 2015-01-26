@@ -1,4 +1,4 @@
-{x ...}
-    like dec >> {x 'x '...}
+{x rest...}
+    like dec >> {x 'x 'rest...}
 {'1 ...}
     -> *
