@@ -1,6 +1,6 @@
 "calcs the expression (2 + 3) * (4 + 5) in parallel"
 
-+' = {
+'+' = {
     like +
     => *
 } 
