@@ -76,18 +76,11 @@
 /Множество/, может задаваться следующими формами:
 1. Регулярное множество
 2. Сингулярное множество
-3. Свободное множество
 
-Первая и вторая формы множества именют своим различием только лексику, в то время как семантика их полностью идентична. Различие заключается в том, что в регулярном множестве, в качестве делимитера элементов, играет роль неэкранированный пробельный символ (пробел, табуляция, новая строка и пр.), а в сингулярном множестве все атомы односимвольные, т.е. в сингулярном множестве нет необходимости в делимитерах.
+Обе формы множества различны только с лексической точки зрения, в то время как семантика их полностью идентична. Различие заключается в том, что в регулярном множестве, в качестве делимитера элементов, играет роль неэкранированный пробельный символ (пробел, табуляция, новая строка и пр.), а в сингулярном множестве все атомы односимвольные, т.е. в сингулярном множестве нет необходимости в делимитерах.
 #+BEGIN_EXAMPLE
   (ab e)    "4 atoms: a, b, <space>, e"
   {ab e}    "2 atoms: ab, e"
-#+END_EXAMPLE
-Третяя форма множества (свободное), в лексическом плане, идентична регулярному множеству (т.е. используются теже делимитеры), но в семантическом плане, оно отличается от первых двух форм множеств (регулярного и сингулярного) тем что на этом множестве не установленно отношение порядка.
-#+BEGIN_EXAMPLE
-  <ab e> = <e ab>    "ok"
-  (ab e) = (e ba)    "error"
-  {ab e} = {e ab}    "error"
 #+END_EXAMPLE
 
 При транслировании программы, множество стоящее на самом верхнем уровне (т.е. множество вбирающее в себя все остальные лексические единицы) рассматриваться как /субъект/, т.е. оно транслирруется в /символ-субъект/. Трансляция в символ зависит от транслируемого символа, например:
@@ -166,92 +159,153 @@
 *** Утверждение
 - Утверждение :: это [[Отражение][/отражение/]] LST-сущности.
 *** Отражение
-/Отражение/ - это LST-сущность отражающая тот или иной аспект room-системы. В Room, отражения встречаются в двух формах, это:
-1. Перспектива - отражает пространство, в котором прибывает субъект;
-2. Утверждение - отражает другую LST-сущность;
-               
-Семантика отражения:
-| N | Элемент отражения | Соответствие              | Вводимый алиас (имя) |
-|---+-------------------+---------------------------+----------------------|
-| 1 | ...               | 0 или более LST-сущностей |                      |
-| 2 | .                 | 0 или одна LST-сущность   |                      |
-| 3 | <atom>...         | 0 или более LST-сущностей | <atom>...            |
-| 4 | <atom>.           | 0 или одна LST-сущность   | <atom>.              |
-| 5 | '<some>           | <some>                    |                      |
-| 6 | <atom>            | LST-сущность              | <atom>               |
-| 7 | alias to <some>   | <some>                    |                      |
-, где:
-<some> -  LST-сущность
-<atom> - атом
+/Отражение/ - это LST-сущность отражающая тот или иной аспект room-системы. При помощи отражений в room реализуется механизм сопоставления с образцом, где отражения играхт роль образца.
+**** Декларация
+Отражение может быть представлено как множеством так и атомом.
 
-1) Безымянное троеточие не вводит никакой алиас в окружение. В одном отражении может встречаться не более одного безымянного троеточия:
-   #+BEGIN_EXAMPLE
-     {... x} = {a b (cd) a}        "ok, ... mathces a b cd sequence (not a complete set), x is an alias of a"
-     {... x ...}  = {a b (cd) a}    "incorrect!"
-   #+END_EXAMPLE
-2) Безымянное точка не вводит никаких алиасов в окружение.
-   #+BEGIN_EXAMPLE
-     {. x .} = {a b (cd)}      "ok, x is an alias of b, first . (dot) mathces a, second - (cd)"
-     {. x .} = {a b}           "ok, x is an alias of b, first . (dot) mathces a, second - nothing"
-     {. x} = {b}               "incorrect: dot mathces b, but x is nothing - which is imposible, because x doesn't dot-noted"
-     {. x .} = {a b (cd) a}    "incorrect: last a is left unmatched"
-   #+END_EXAMPLE
-3) Именованное троеточие вводит одноименный алиас в окружение. В одном отражении может встречаться не более одного имянновонного троеточия:
-   #+BEGIN_EXAMPLE
-     {x... y} = {a b (cd) a}          "ok, x... mathces a b cd sequence (not a copmlete set), y is an alias of a"
-         some >> {x...}               "ok, equals to: some >> {a b (cd)}"
-         some >> x...                 "incorrect: x... is not a complete set (i.e. it can't represent the spce)"
-     {x... y z...}  = {a b (cd) a}    "incorrect: more than 2 ellipsis"
-   #+END_EXAMPLE
-4) Именнованная точка вводит одноименный алиас в окружение.
-   #+BEGIN_EXAMPLE
-     {x. y z.} = {a b (cd)}    "ok, x. is an alias of a, y is an alias of b, z is an alias of (cd)"
-     {x. y z.} = {a b}         "ok, x is an alias of b, y is an alias of b, z matches nothing"
-     {x. y} = {b}              "incorrect: x. is an alias of b, but y is nothing - which is imposible, because y doesn't dot-noted"
-     {x. y z.} = {a b (cd) a}  "incorrect!, last a is left unmatched"
-   #+END_EXAMPLE
-5) Цитирование атома в отражении, отменяет трактовку данного атома как алиаса, и вводит атомарное утверждение:
-   #+BEGIN_EXAMPLE
-     alias_to_x = x
+В Room, отражения встречаются в двух формах:
+1. [[Перспектива][Перспектива]] (задается множеством) - отражает пространство, в котором прибывает субъект;
+2. [[Утверждение][Утверждение]] (может задаваться как множеством так и отдельным атомом) - отражает другую LST-сущность;
 
-     {
-       'x = a             "there is no alias introducing, because x is quoted,
-                           it is not an alias, if a is not an alias to x,
+На каждую форму отражений могут накладываться те или иные ограничения по стректуре отражения, например, /перспектива/ может быть представленна только множеством, в то время как /утверждения/ могут представлять из себя как множества так и отдельные атомы.
+
+**** Правила сопоставления
++ Атомы в отражении
+  | N | Элемент отражения | Соответствие | Вводимый алиас (имя) |
+  |---+-------------------+--------------+----------------------|
+  | 1 | '<atom>           | LST-сущность | <atom>               |
+  | 2 | <atom>            | <atom>       |                      |
+  | 3 | alias to <some>   | <some>       |                      |
+  #+TBLFM: $1=@#-1
+  где:
+  <some> - LST-сущность
+  <atom> - атом
+
+  1. Если атом не является алиасом (т.е. до этого не был декларирован как алиас), то цитирование вводит трактовку данного атома как алиаса, т.е. атом становится алиасом. Если же атом явлется алиасом и при этом цитироуется в отражении, то это приводит к ошибке времени компиляции - алиасы не могут быть переопределены:
+     #+BEGIN_EXAMPLE
+       'alias_to_x = x    "alias introducing"
+
+
+       'x = a             "alias introducing,
+                           at now we have the following aliases:
+                           alias_to_x: an alias of atom x
+                           x: an alias of atom a"
+
+       'x = alias_to_x    "error, x is already an alias"
+     #+END_EXAMPLE
+  2. Нецитированнй атом, в отражении, учавствует в атомарном утверждении:
+     #+BEGIN_EXAMPLE
+       'alias_to_x = x
+
+        x = alias_to_x    "ok, atomic-assertion"
+
+        x = a             "atomic-assertion, if a is not an alias to x,
                            then this line leads to compile-time error,
                            because the x and a is different attoms"
+     #+END_EXAMPLE
+  3. Алиас, в отражении, трактуется как атомарное утверждение сущности на который данный алиас ссылается:
+     #+BEGIN_EXAMPLE
+       'alias_to_x = x    "alias introducing"
+ 
+       'x = a             "alias introducing,
+                           at now we have the following aliases:
+                           alias_to_x: an alias of atom x
+                           x: an alias of atom a"
 
-       'x = alias_to_x    "ok, atomic-assertion"
-     } >> {...} 
-   #+END_EXAMPLE
-6) Если атом, упомянутый в декларации не является алиасом (т.е. до этого не был декларирован как алиас), то он становится алиасом:
-   #+BEGIN_EXAMPLE
-     alias_to_x = x
+        x = a             "ok, atomic-asserion"     
 
-     {
-       x = a                      "alias introducing, now x is an alias of a"
-
-       {'x d} = {alias_to_x 2}    "alias introducing, now d is an alias of 2,
-                                   x is quoted, and therefore it is an atomic-assertion"
-
-       some >> {x ...}            "equals to some >> {a ...}"
-
-     } >> {...}
-   #+END_EXAMPLE
-7) Если атом, упомянутый в декларации является алиасом (т.е. до этого был декларирован как алиас), то в данной декларации этот атом трактуется не как алиас а как атомарное утверждение сущности на который данный алиас ссылается:
-   #+BEGIN_EXAMPLE
-     alias_to_x = x
-     x = a                "alias introducing, now x is an alias of a"
-
-     {
-       x = a              "ok, atomic-asserion"     
-       x = alias_to_x     "equals to 'a = x, i.e. if a is not an alias to x,
+        x = alias_to_x    "equals to a = x, i.e. if a is not an alias to x,
                            then this line leads to compile-time error"
+     #+END_EXAMPLE
++ Множества в отражении
+  В Room, множество представляет из себя совокупность LST-сущностей (атомы и др. множества). В отличие от атомов, множества, несут в себе структуру. В данном случае под структурой понимется отношение порядка установленое на множествe. В Room, на любым множестве установлено отношение порядка. Следовательно, при рассматрении множества как элемента отражения, важно выделить два понятия:
+  1. Содержимое множества;
+  2. Отношение порядка (в дальнейшем структура множества);
+  В процессе сопоставления множеств, в отражении, всегда принимает участие сопоставление _содержимого множества_ и, опционально, сопоставление _структуры множества_.
+  - Сопоставление структуры множества ::
+       eсли множество *не* цитировано, то, в сопоставлении, помимо содержимого множества, также начинает играть роль и его структура:
+       #+BEGIN_EXAMPLE
+          {'a b 'c} = {1 2 b}   "fail, order is important - b not matches 2'
 
-       {x d} = {a 2}      "alias introducing, now d is an alias of 2,
-                           x expands to 'a, and therefore it is an atomic-assertion,
-                           it is equal to {'a d} = {a d}"
-     } >> {...}
-   #+END_EXAMPLE
+         '{'e f 'g} = {1 2 f}    "ok, order is not important,
+                                 first occurance of e introduces an alias e = 1
+                                 f not matches 2, but matches third f
+                                 c introduces an alias c = 2"
+
+       #+END_EXAMPLE
+  - Сопоставление содержимого множества ::
+       производится последовательно, слева направо, при этом, в зависимости от типа LST-сущности, применяются соответствующие правила сопоставленя отражений. Отсюда следует, что т.к. элементами множества могут служить другие множества, то процес сопоставления может нести рекурсивный характер. Касательно сопоставления атомов - при сопоставлении, введение алиасов производится сразуже помере чтения декларации отражения:
+       #+BEGIN_EXAMPLE
+         {'e c 'e} = {1 2 1}    "ok"
+
+         {'a 'b a} = {1 2 3}    "error,
+                                 first occurance of a introduces an alias a = 1
+                                 first occurance of b introduces an alias b = 2
+                                 second occurance of a means atomic asserion 1 = 3 which is not correct"
+
+         {'a 'b 'a} = <some>    "error,
+                                 first occurance of a introduces an alias, and second too - which is incorrect"
+       #+END_EXAMPLE
+
+       Важно заметить, что в случае, если множество цитировано, и соответственно, в процессе сопоставления структура множества не учавствует, то изменяется порядок сопоставления содержимого: сопоставление производится все также слева направо, но первым делом сопоставляются _все не цитированные сущности_, а уже затем производится сопоставление остального содержимого.
+
+       | N | Элемент отражения | Соответствие              | Вводимый алиас (имя) |
+       |---+-------------------+---------------------------+----------------------|
+       | 1 | ...               | 0 или более LST-сущностей |                      |
+       | 2 | .                 | 0 или одна LST-сущность   |                      |
+       | 3 | <atom>...         | 0 или более LST-сущностей | <atom>...            |
+       | 4 | <atom>.           | 0 или одна LST-сущность   | <atom>.              |
+       #+TBLFM: $1=@#-1
+    1. Безымянное троеточие не вводит никакой алиас в окружение, соответственно оно не нуждается в цитировании. В одном отражении может встречаться не более одного безымянного троеточия:
+       #+BEGIN_EXAMPLE
+         {... 'x}      = {a b (cd) a}   "ok, ... mathces a b cd sequence (not a complete set), x is an alias of a"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {... 'x ...}  = {a b (cd) a}   "incorrect!"
+       #+END_EXAMPLE
+    2. Безымянное точка не вводит никаких алиасов в окружение, соответсвенно она не нуждается в цитировании.
+       #+BEGIN_EXAMPLE
+         {. 'x .} = {a b (cd)}      "ok, x is an alias of b, first . (dot) mathces a, second - (cd)"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {. 'x .} = {a b}           "ok, x is an alias of b, first . (dot) mathces a, second - nothing"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {. 'x}   = {b}             "incorrect: dot mathces b, but x is nothing - which is imposible, because x doesn't dot-noted"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {. 'x .} = {a b (cd) a}    "incorrect: last a is left unmatched"
+       #+END_EXAMPLE
+    3. Именованное троеточие вводит одноименный алиас в окружение. Соответсвенно к нему применяются все те же правила цитирования (в отражении) что и к атомам.  В одном отражении может встречаться не более одного имянновонного троеточия:
+       #+BEGIN_EXAMPLE
+         {'x... 'y} = {a b (cd) a}           "ok, x... mathces a b cd sequence (not a copmlete set), y is an alias of a"
+             some >> {x...}                  "ok, equals to: some >> {a b (cd)}"
+             some >> x...                    "incorrect: x... is not a complete set (i.e. it can't represent the spce)"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {'x... 'y 'z...}  = {a b (cd) a}    "incorrect: more than 2 ellipsis"
+       #+END_EXAMPLE
+    4. Именнованная точка вводит одноименный алиас в окружение. Соответсвенно к ней применяются все те же правила цитирования (в отражении) что и к атомам.
+       #+BEGIN_EXAMPLE
+         {'x. 'y 'z.} = {a b (cd)}    "ok, x. is an alias of a, y is an alias of b, z is an alias of (cd)"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {'x. 'y 'z.} = {a b}         "ok, x is an alias of b, y is an alias of b, z matches nothing"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {'x. 'y}     = {b}           "incorrect: x. is an alias of b, but y is nothing - which is imposible, because y doesn't dot-noted"
+       #+END_EXAMPLE
+
+       #+BEGIN_EXAMPLE
+         {'x. 'y 'z.} = {a b (cd) a}  "incorrect!, last a is left unmatched"
+       #+END_EXAMPLE
 * Система модулей
 - Программа на room (далее /room-система/ или просто /система/) :: представляет из себя совокупность модулей.
 - Модуль :: единица трансляции, описывает субъект.
@@ -272,8 +326,8 @@
 * Примеры
 - Факториал ::
 #+BEGIN_EXAMPLE
-  {a ...}
+  {'a ...}
       like dec >> {a 'a '...}    "here we hide some simbols by quotation it"
-  {'1 ...}                       "here (in perspective) quotation means exactess of symbol (i.e. prevent meaning as alias)"
+  {1 ...}                        "here (in perspective) quotation means exactess of symbol (i.e. prevent meaning as alias)"
       -> *
 #+END_EXAMPLE

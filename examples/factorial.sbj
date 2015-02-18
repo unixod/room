@@ -1,0 +1,4 @@
+{x rest...}
+    like dec >> {x 'x 'rest...}
+{'1 ...}
+    -> *
