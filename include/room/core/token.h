@@ -2,7 +2,6 @@
 #define ROOM_CORE_TOKEN_H
 
 #include <string>
-#include <cstdint>
 
 namespace room {
 namespace core {
