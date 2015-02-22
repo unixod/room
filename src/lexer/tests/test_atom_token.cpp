@@ -83,8 +83,7 @@ core::Token atom(const std::string &lexeme) {
 core::Token error(const std::string &lexeme) {
     return {token::Class::Error, lexeme};
 }
-
-}
+} // namespace tok
 
 Tokens tokenize(std::string pgm) {
     std::istringstream src{pgm};
