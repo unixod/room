@@ -34,7 +34,9 @@ if(USE_RE2C)
     unset(RE2C_VERSION)
 
     add_custom_command(OUTPUT ${RE2C_GEN_FILES_LOCATION}/${LEXER_RE2C_GEN_H}
-        COMMAND ${RE2C_EXECUTABLE} -c -o ${LEXER_RE2C_GEN_H} -t ${LEXER_RE2C_CONDITIONS_GEN_H} ${CMAKE_CURRENT_LIST_DIR}/${LEXER_RE2C_FILE}
+        COMMAND ${RE2C_EXECUTABLE} --no-generation-date
+                                   -c -o ${LEXER_RE2C_GEN_H}
+                                   -t ${LEXER_RE2C_CONDITIONS_GEN_H} ${CMAKE_CURRENT_LIST_DIR}/${LEXER_RE2C_FILE}
         WORKING_DIRECTORY ${RE2C_GEN_FILES_LOCATION}
         DEPENDS ${LEXER_RE2C_FILE}
     )
