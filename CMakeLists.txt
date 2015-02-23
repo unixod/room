@@ -34,5 +34,10 @@ set(ROOM_INCLUDE_DIR
 set(3RDPARTY_LIB_DIR
     "${CMAKE_SOURCE_DIR}/3rd_party")
 
+#add_library(catch.precompiled OBJECT ${CMAKE_BINARY_DIR}/catch.precompiled.cpp)
+#add_custom_command(gen.catch.precompiled
+#    COMMAND ${CMAKE_COMMAND} echo -E "#define CATCH_CONFIG_MAIN\n#include <catch>" > ${CMAKE_BINARY_DIR}/catch.precompiled.cpp)
+#add_dependencies(catch.precompiled gen.catch.precompiled)
+
 add_subdirectory(src)
 
