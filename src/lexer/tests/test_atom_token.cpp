@@ -5,20 +5,21 @@
 #include "room/utils/source_string.h"
 #include "room/utils/c++14.h"
 
-namespace core = room::core;
 namespace utils = room::utils;
-namespace token = room::core::token;
+namespace lexer = room::lexer;
+namespace token = room::lexer::token;
 
 /// Catch helpers
 namespace std {
-std::ostream & operator << (std::ostream &out, const core::Token &token) {
+std::ostream & operator << (std::ostream &out, const lexer::Token &token)
+{
 
-    switch(std::get<core::TokenClass>(token)) {
+    switch(std::get<lexer::TokenClass>(token)) {
     case token::Class::Atom:        out << "Atom";
-        out << "{" << std::get<core::TokenLexeme>(token) << "}";
+        out << "{" << std::get<lexer::TokenLexeme>(token) << "}";
         break;
     case token::Class::Error:       out << "Error";
-        out << "{" << std::get<core::TokenLexeme>(token) << "}";
+        out << "{" << std::get<lexer::TokenLexeme>(token) << "}";
         break;
     case token::Class::SpaceBegin:  out << "SpaceBegin"; break;
     case token::Class::SpaceEnd:    out << "SpaceEnd";   break;
@@ -30,18 +31,20 @@ std::ostream & operator << (std::ostream &out, const core::Token &token) {
     return out;
 }
 
-bool operator == (const core::Token &t1, const core::Token &t2) {
-    auto t1Class = std::get<core::TokenClass>(t1);
-    return t1Class == std::get<core::TokenClass>(t2) &&
-            (t1Class == core::token::Class::SpaceBegin ||
-             t1Class == core::token::Class::SpaceEnd ||
-             std::get<core::TokenLexeme>(t1) == std::get<core::TokenLexeme>(t2));
+bool operator == (const lexer::Token &t1, const lexer::Token &t2)
+{
+    auto t1Class = std::get<lexer::TokenClass>(t1);
+    return t1Class == std::get<lexer::TokenClass>(t2) &&
+            (t1Class == token::Class::SpaceBegin ||
+             t1Class == token::Class::SpaceEnd ||
+             std::get<lexer::TokenLexeme>(t1) == std::get<lexer::TokenLexeme>(t2));
 
 }
-}
+} // namespace std
 
 /// Helpers
-std::string unescape(std::string lexeme) {
+std::string unescape(std::string lexeme)
+{
     if ((lexeme.size() > 2) &&          // is multi-escaped
             (lexeme.front() == '|') &&
             (lexeme.back() == '|')) {
@@ -54,49 +57,56 @@ std::string unescape(std::string lexeme) {
     return lexeme;
 }
 
-typedef std::vector<core::Token> Tokens;
+typedef std::vector<lexer::Token> Tokens;
 
 namespace tok {
 template<class... T>
-Tokens set(T&&... tokens) {
+Tokens set(T&&... tokens)
+{
     return {std::forward<T>(tokens)...};
 }
 
-core::Token spaceBegin() {
+lexer::Token spaceBegin()
+{
     return {token::Class::SpaceBegin, ""};
 }
 
-core::Token spaceEnd() {
+lexer::Token spaceEnd()
+{
     return {token::Class::SpaceEnd, ""};
 }
 
-core::Token quote() {
+lexer::Token quote()
+{
     return {token::Class::Quotation, "'"};
 }
 
-core::Token atom(const std::string &lexeme) {
+lexer::Token atom(const std::string &lexeme)
+{
     return {token::Class::Atom, lexeme};
 }
 
-core::Token error(const std::string &lexeme) {
+lexer::Token error(const std::string &lexeme)
+{
     return {token::Class::Error, lexeme};
 }
-}
+} // namespace tok
 
-Tokens tokenize(std::string pgm) {
+Tokens tokenize(std::string pgm)
+{
     std::istringstream src{pgm};
     auto lexer = room::Lexer{
         src
     };
 
     Tokens out;
-    core::Token token;
+    lexer::Token token;
 
     while(lexer >> token) {
         out.push_back(token);
 
-        if (std::get<core::TokenClass>(token) == core::token::Class::Error) {
-            std::get<core::TokenLexeme>(out.back()) = "offset: " + std::to_string(lexer.currentOffset());
+        if (std::get<lexer::TokenClass>(token) == token::Class::Error) {
+            std::get<lexer::TokenLexeme>(out.back()) = "offset: " + std::to_string(lexer.currentOffset());
             break;
         }
     }

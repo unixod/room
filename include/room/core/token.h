@@ -4,7 +4,7 @@
 #include <string>
 
 namespace room {
-namespace core {
+namespace lexer {
 namespace token {
 
 enum class Class {
@@ -26,7 +26,7 @@ enum {
 
 typedef std::pair<token::Class, token::Lexeme> Token;
 
-} // namespace core
+} // namespace lexer
 } // namespace room
 
 #endif // ROOM_CORE_TOKEN_H

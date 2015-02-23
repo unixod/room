@@ -9,7 +9,7 @@
 #include "room/core/token.h"
 #include "room/lexer.h"
 
-namespace token = room::core::token;
+namespace token = room::lexer::token;
 
 namespace room {
 namespace details {
@@ -102,7 +102,7 @@ token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> r
 */
 }
 
-void unescapeAtomLexeme(core::token::Lexeme &str) {
+void unescapeAtomLexeme(token::Lexeme &str) {
     if (!str.empty() && (str.front() == '|')) {         // multiescaped atom
         if ((str.size() > 1) && (str.back() == '|')) {
             // removing the surrounding boundaries
@@ -112,7 +112,8 @@ void unescapeAtomLexeme(core::token::Lexeme &str) {
     } else {
         // removing back-slash espapes
         bool escapeVisited = false;
-        auto trash = std::remove_if(str.begin(), str.end(), [&escapeVisited](core::token::Lexeme::value_type c){
+        auto trash = std::remove_if(str.begin(), str.end(),
+                                    [&escapeVisited](token::Lexeme::value_type c) {
             escapeVisited = (c == '\\' && !escapeVisited);
             return escapeVisited;
         });
@@ -153,7 +154,7 @@ public:
      * in such case, after the token-processing will be done, the stash will be contain the
      * preffix of the lexeme.
      */
-    core::token::Lexeme stash;
+    token::Lexeme stash;
     details::Re2cLexerState re2cState;
     bool atEnd = false;
 
