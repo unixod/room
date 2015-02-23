@@ -1,5 +1,3 @@
-#define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_SFINAE
 #include <catch.hpp>
 #include <sstream>
 #include <iterator>
@@ -83,7 +81,6 @@ core::Token atom(const std::string &lexeme) {
 core::Token error(const std::string &lexeme) {
     return {token::Class::Error, lexeme};
 }
-
 }
 
 Tokens tokenize(std::string pgm) {
