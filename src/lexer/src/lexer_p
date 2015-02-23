@@ -6,7 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include "lexer.re2c.conditions.h"
-#include "room/core/token.h"
+#include "room/lexer/token.h"
 #include "room/lexer.h"
 
 namespace token = room::lexer::token;

@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <iosfwd>
-#include "room/core/token.h"
+#include "room/lexer/token.h"
 
 namespace room {
 
