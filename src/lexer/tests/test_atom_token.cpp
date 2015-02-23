@@ -2,10 +2,7 @@
 #include <sstream>
 #include <iterator>
 #include "room/lexer.h"
-#include "room/utils/source_string.h"
-#include "room/utils/c++14.h"
 
-namespace utils = room::utils;
 namespace lexer = room::lexer;
 namespace token = room::lexer::token;
 
