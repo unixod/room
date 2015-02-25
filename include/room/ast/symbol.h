@@ -10,8 +10,14 @@ namespace ast {
 
 class Symbol {
 public:
+    Symbol(bool quote)
+        : quoted(quote)
+    {}
+
     virtual ~Symbol()
-    {};
+    {}
+
+    const bool quoted;    // lexicaly, any symbol can be quoted
 };
 
 } // namespace ast
