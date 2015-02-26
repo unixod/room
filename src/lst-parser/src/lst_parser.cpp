@@ -11,9 +11,9 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
 {   
     bool quoted = false;    // next symbol should be quoted in case this flag is set
 
-    std::stack<std::unique_ptr<room::ast::Set>> sets;
-    HERE NEED THE RESTRUCTURATION
-    sets.emplace(new room::ast::Set(quoted));   // root
+    auto root = std::make_unique<room::ast::Set>(quoted);
+
+    std::stack<room::ast::Set *> currentSet{{root.get()}};
 
     for(auto token = nextToken();
         std::get<lexer::TokenClass>(token) != lexer::token::Class::End;
@@ -21,20 +21,27 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
 
         switch(std::get<lexer::TokenClass>(token)) {
         case lexer::token::Class::Atom:
-            sets.top()->elements.emplace_back(new room::ast::Atom(std::get<lexer::TokenLexeme>(token), quoted));
+            currentSet.top()->elements.emplace_back(new room::ast::Atom(std::get<lexer::TokenLexeme>(token), quoted));
             quoted = false;
             break;
         case lexer::token::Class::SpaceBegin:
+            room::ast::Set *subset;
+            currentSet.top()->elements.emplace_back(subset = new room::ast::Set(quoted));
+            currentSet.push(subset);
             break;
         case lexer::token::Class::SpaceEnd:
+            if (currentSet.size() == 1) {
+                throw std::domain_error{"room::lst::parse, unexpected end of space"};
+            }
+            currentSet.pop();
             break;
         case lexer::token::Class::Quotation:
             quoted = true;
             break;
         default:
-            ;   // error
+            throw std::domain_error{"room::lst::parse, unexpected token"};
         }
     }
 
-    return nullptr;
+    return std::move(root);
 }
