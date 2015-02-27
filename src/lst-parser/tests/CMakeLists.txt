@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 2.8)
+
+include(addTest)
+include(precompileCatch)
+
+include_directories(
+    ${3RDPARTY_LIB_DIR}/Catch/single_include
+    ${ROOM_INCLUDE_DIR})
+
+precompileCatch(catch)
+
+addTest("LST-parser" empty_source
+        OBJECT_LIBS ${catch}
+        LIBS lexer lst-parser)

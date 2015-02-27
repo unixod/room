@@ -5,6 +5,6 @@ set(LST_PARSER_SOURCE_DIR
 
 add_subdirectory(src)
 
-#if(WITH_TESTS)
-#    add_subdirectory(tests)
-#endif()
+if(WITH_TESTS)
+    add_subdirectory(tests)
+endif()
