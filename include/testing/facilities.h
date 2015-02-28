@@ -7,7 +7,7 @@
 #include "room/ast/lst/set.h"
 
 //
-// Explanation of swallowing:
+// explanation of swallowing:
 //
 // template<class... T>
 // std::string cat(T&&... elts) {
@@ -17,11 +17,19 @@
 //     return str;
 // }
 //
+// example:
+// template<class... T>
+// std::string cat(T&&... ss) {
+//     std::string str;
+//     EVAL_FOR_EACH(str.append(ss));
+//     return str;
+// }
 #define EVAL_FOR_EACH(expr) \
     (void)(int[]){(void(expr), 0)...}
 
 
 namespace testing {
+namespace lst {
 
 enum {
     Source,
@@ -79,6 +87,7 @@ std::pair<std::string, std::unique_ptr<room::ast::Symbol>> Program(T&&... elt) {
     return {src, std::move(root)};
 }
 
+} // namespace lst
 } // namespace testing
 
 #endif // TESTING_FACILITIES_H

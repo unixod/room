@@ -4,7 +4,7 @@
 #include "room/lst_parser.h"
 #include "testing/facilities.h"
 
-namespace tst = testing;
+namespace tst = testing::lst;
 
 TEST_CASE("Empty source") {
     auto pgm = tst::Program();
