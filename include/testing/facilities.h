@@ -36,55 +36,59 @@ enum {
     LST
 };
 
-std::pair<std::string, std::unique_ptr<room::ast::Symbol>>
+std::pair<std::vector<room::lexer::Token>, std::unique_ptr<room::ast::Symbol>>
 Atom(const std::string &name, bool quoted = false)
 {
-    return {quoted ? "'" + name : name, std::make_unique<room::ast::Atom>(name, quoted)};
+    return {quoted ? std::vector<room::lexer::Token>{room::lexer::Token{room::lexer::token::Class::Quotation, "'"},
+                     room::lexer::Token{room::lexer::token::Class::Atom, name}}
+                   : std::vector<room::lexer::Token>{room::lexer::Token{room::lexer::token::Class::Atom, name}}, std::make_unique<room::ast::Atom>(name, quoted)};
 }
 
-std::pair<std::string, std::unique_ptr<room::ast::Symbol>>
+std::pair<std::vector<room::lexer::Token>, std::unique_ptr<room::ast::Symbol>>
 QuotedAtom(const std::string &name)
 {
     return Atom(name, true);
 }
 
 template<class... T>
-std::pair<std::string, std::unique_ptr<room::ast::Symbol>>
+std::pair<std::vector<room::lexer::Token>, std::unique_ptr<room::ast::Symbol>>
 Set(T&&... elt)
 {
-    std::string src = "{";
-    EVAL_FOR_EACH(src.append(std::get<Source>(elt)).append(" "));
-    src += "}";
+    std::vector<room::lexer::Token> tokens = {room::lexer::Token{room::lexer::token::Class::SpaceBegin, "{"}};
+    EVAL_FOR_EACH(tokens += std::get<Source>(elt));
+    tokens.emplace_back(room::lexer::token::Class::SpaceEnd, "}");
 
     auto root = std::make_unique<room::ast::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
-    return {src, std::move(root)};
+    return {tokens, std::move(root)};
 }
 
 template<class... T>
 std::pair<std::string, std::unique_ptr<room::ast::Symbol>>
 QuotedSet(T&&... elt)
 {
-    std::string src = "'{";
-    EVAL_FOR_EACH(src.append(std::get<Source>(elt)).append(" "));
-    src += "}";
-
-    auto root = std::make_unique<room::ast::Set>(true);
-    EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
-
-    return {src, std::move(root)};
-}
-
-template<class... T>
-std::pair<std::string, std::unique_ptr<room::ast::Symbol>> Program(T&&... elt) {
-    std::string src;
-    EVAL_FOR_EACH(src.append(std::get<Source>(elt)).append(" "));
+    std::vector<room::lexer::Token> tokens = {room::lexer::Token{room::lexer::token::Class::Quotation, "'"},
+                                              room::lexer::Token{room::lexer::token::Class::SpaceBegin, "{"}};
+    EVAL_FOR_EACH(tokens += std::get<Source>(elt));
+    tokens.emplace_back(room::lexer::token::Class::SpaceEnd, "}");
 
     auto root = std::make_unique<room::ast::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
-    return {src, std::move(root)};
+    return {tokens, std::move(root)};
+}
+
+template<class... T>
+std::pair<std::vector<room::lexer::Token>, std::unique_ptr<room::ast::Symbol>> Program(T&&... elt) {
+    std::vector<room::lexer::Token> tokens;
+    EVAL_FOR_EACH(tokens += std::get<Source>(elt));
+    tokens.emplace_back(room::lexer::token::Class::End, "<end>");
+
+    auto root = std::make_unique<room::ast::Set>(false);
+    EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
+
+    return {tokens, std::move(root)};
 }
 
 } // namespace lst
