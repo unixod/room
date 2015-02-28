@@ -2,11 +2,15 @@
 #include <sstream>
 #include "room/lexer.h"
 #include "room/lst_parser.h"
-#include "room/ast/lst/set.h"
+#include "testing/facilities.h"
+
+namespace tst = testing;
 
 TEST_CASE("Empty source") {
-    std::istringstream empty;
-    auto lexer = room::Lexer{empty};
+    auto pgm = tst::Program();
+
+    std::istringstream src{std::get<tst::Source>(pgm)};
+    auto lexer = room::Lexer{src};
 
     auto lst = room::lst::parse([&]{
         room::lexer::Token token;
@@ -14,12 +18,9 @@ TEST_CASE("Empty source") {
         return token;
     });
 
-
     REQUIRE(lst != nullptr);
 
     auto rootSet = dynamic_cast<room::ast::Set *>(lst.get());
     REQUIRE(rootSet != nullptr);
     REQUIRE(rootSet->elements.empty());
-
-    REQUIRE(false);
 }

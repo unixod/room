@@ -12,3 +12,6 @@ precompileCatch(catch)
 addTest("LST-parser" empty_source
         OBJECT_LIBS ${catch}
         LIBS lexer lst-parser)
+
+showFilesInIDE(
+    ${ROOM_INCLUDE_DIR}/testing/facilities.h)
