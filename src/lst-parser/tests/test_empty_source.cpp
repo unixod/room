@@ -3,15 +3,18 @@
 #include "room/lst_parser.h"
 #include "testing/facilities.h"
 
-namespace tst = testing::lst;
+namespace test = room::testing::lst;
+namespace lex = room::lexer;
 
 TEST_CASE("Empty source") {
-    auto pgm = tst::Program();
-    auto token = std::get<tst::Source>(pgm).begin();
-    auto end = std::get<tst::Source>(pgm).end();
+    auto pgm = test::Program();
+
+    auto token = std::get<test::Tokens>(pgm).begin();
+    auto end = std::get<test::Tokens>(pgm).end();
 
     auto lst = room::lst::parse([token, end]() mutable {
-        return token != end ? *token++ : room::lexer::Token{room::lexer::token::Class::End, "<end>"};
+        return token != end ? *token++
+                            : lex::Token{lex::token::Class::End, "<end>"};
     });
 
     REQUIRE(lst != nullptr);
