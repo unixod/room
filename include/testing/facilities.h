@@ -81,17 +81,45 @@ QuotedSet(T&&... elt)
     return {tokens, std::move(root)};
 }
 
-template<class... T>
-std::pair<TokenSet, std::unique_ptr<ast::Symbol>> Program(T&&... elt) {
-    TokenSet tokens;
-    EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
-    tokens.emplace_back(lexer::token::Class::End, "<end>");
+//template<class... T>
+//std::pair<TokenSet, std::unique_ptr<ast::Symbol>> Program(T&&... elt) {
+//    TokenSet tokens;
+//    EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
+//    tokens.emplace_back(lexer::token::Class::End, "<end>");
 
-    auto root = std::make_unique<ast::Set>(false);
-    EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
+//    auto root = std::make_unique<ast::Set>(false);
+//    EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
-    return {tokens, std::move(root)};
-}
+//    return {tokens, std::move(root)};
+//}
+
+class Program {
+public:
+    template<class... T>
+    Program(T&&... elt)
+    {
+        auto &tokens = _data.first;
+
+        EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
+        tokens.emplace_back(lexer::token::Class::End, "<end>");
+
+        auto &root = _data.second;
+        root = std::make_unique<ast::Set>(false);
+        EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
+    }
+
+    const TokenSet & tokens() const {
+        return _data.first;
+    }
+
+    bool lstIsEqualTo(const ast::Symbol &) const
+    {
+        return false;
+    }
+
+private:
+    std::pair<TokenSet, std::unique_ptr<ast::Set>> _data;
+};
 
 } // namespace lst
 } // namespace testing

@@ -9,8 +9,8 @@ namespace lex = room::lexer;
 TEST_CASE("Empty source") {
     auto pgm = test::Program();
 
-    auto token = std::get<test::Tokens>(pgm).begin();
-    auto end = std::get<test::Tokens>(pgm).end();
+    auto token = pgm.tokens().begin();
+    auto end = pgm.tokens().end();
 
     auto lst = room::lst::parse([token, end]() mutable {
         return token != end ? *token++
