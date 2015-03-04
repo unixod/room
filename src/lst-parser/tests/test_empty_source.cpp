@@ -22,4 +22,5 @@ TEST_CASE("Empty source") {
     auto rootSet = dynamic_cast<room::ast::Set *>(lst.get());
     REQUIRE(rootSet != nullptr);
     REQUIRE(rootSet->elements.empty());
+    REQUIRE(pgm == lst);
 }

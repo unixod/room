@@ -98,27 +98,48 @@ public:
     template<class... T>
     Program(T&&... elt)
     {
-        auto &tokens = _data.first;
+        auto &tokens = std::get<Tokens>(_data);
 
         EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
         tokens.emplace_back(lexer::token::Class::End, "<end>");
 
-        auto &root = _data.second;
+        std::unique_ptr<ast::Set> root;
         root = std::make_unique<ast::Set>(false);
         EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
+        std::get<LST>(_data) = std::move(root);
     }
 
     const TokenSet & tokens() const {
         return _data.first;
     }
 
-    bool lstIsEqualTo(const ast::Symbol &) const
+    bool operator == (const std::unique_ptr<ast::Symbol> &root) const
     {
+        return compareLST(std::get<LST>(_data), root);
+    }
+
+private:
+    static bool compareLST(const std::unique_ptr<ast::Symbol> &a, const std::unique_ptr<ast::Symbol> &b)
+    {
+        if (a->quoted == b->quoted) {
+            if (auto set1 = dynamic_cast<ast::Set *>(a.get())) {
+                if (auto set1 = dynamic_cast<ast::Set *>(b.get())) {
+                    return std::equal(set1->elements.begin(), set1->elements.end(),
+                                      set1->elements.begin(), set1->elements.end(),
+                                      compareLST);
+                }
+            } else if (auto a1 = dynamic_cast<ast::Atom *>(a.get())) {
+                if (auto a2 = dynamic_cast<ast::Atom *>(b.get())) {
+                    return a1->name == a2->name;
+                }
+            }
+        }
+
         return false;
     }
 
 private:
-    std::pair<TokenSet, std::unique_ptr<ast::Set>> _data;
+    std::pair<TokenSet, std::unique_ptr<ast::Symbol>> _data;
 };
 
 } // namespace lst
