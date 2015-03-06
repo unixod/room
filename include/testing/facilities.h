@@ -2,6 +2,7 @@
 #define TESTING_FACILITIES_H
 
 #include <string>
+#include <list>
 #include "room/utils/c++14.h"
 #include "room/ast/lst/atom.h"
 #include "room/ast/lst/set.h"
@@ -37,7 +38,7 @@ enum {
     LST
 };
 
-typedef std::vector<lexer::Token> TokenSet;
+typedef std::list<lexer::Token> TokenSet;
 
 std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
 Atom(const std::string &name, bool quoted = false)
@@ -57,7 +58,7 @@ std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
 Set(T&&... elt)
 {
     TokenSet tokens{lexer::Token{lexer::token::Class::SpaceBegin, "{"}};
-    EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
+    EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
     tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
 
     auto root = std::make_unique<ast::Set>(false);
@@ -72,7 +73,7 @@ QuotedSet(T&&... elt)
 {
     TokenSet tokens{lexer::Token{lexer::token::Class::Quotation, "'"},
                     lexer::Token{lexer::token::Class::SpaceBegin, "{"}};
-    EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
+    EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
     tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
 
     auto root = std::make_unique<ast::Set>(false);
@@ -100,7 +101,7 @@ public:
     {
         auto &tokens = std::get<Tokens>(_data);
 
-        EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
+        EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
         tokens.emplace_back(lexer::token::Class::End, "<end>");
 
         std::unique_ptr<ast::Set> root;
