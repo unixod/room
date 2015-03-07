@@ -92,9 +92,7 @@ lexer::Token error(const std::string &lexeme)
 Tokens tokenize(std::string pgm)
 {
     std::istringstream src{pgm};
-    auto lexer = room::Lexer{
-        src
-    };
+    auto lexer = room::Lexer{src};
 
     Tokens out;
     lexer::Token token;

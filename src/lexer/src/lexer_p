@@ -175,6 +175,8 @@ std::size_t Lexer::Private::currentOffset() const noexcept {
 void Lexer::Private::refill(std::size_t n) {
     auto *base = _buffer.data();
 
+    // explicit unsigned type definition (std::size_t) is necessary to prevent compiler warnings
+    // when signed-unsigned comparisions in code below
     std::size_t skippedHeadSize = std::distance(base, re2cState.lexemeStart);   // size_t: the 're2cState.lexemeStart' can't precede the 'base'
     auto passedLexemePartSize = std::distance(re2cState.lexemeStart, std::min(re2cState.lexemeEnd,
                                                                               std::min(re2cState.ctxMarker, re2cState.marker)));
