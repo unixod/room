@@ -53,6 +53,18 @@ QuotedAtom(const std::string &name)
     return Atom(name, true);
 }
 
+std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
+Error(const std::string &description)
+{
+    return {{lexer::Token{lexer::token::Class::Error, description}}, nullptr};
+}
+
+std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
+Custom(lexer::Token token, std::unique_ptr<ast::Symbol> lstSymbol = nullptr)
+{
+    return {{token}, std::move(lstSymbol)};
+}
+
 template<class... T>
 std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
 Set(T&&... elt)
@@ -82,18 +94,6 @@ QuotedSet(T&&... elt)
     return {tokens, std::move(root)};
 }
 
-//template<class... T>
-//std::pair<TokenSet, std::unique_ptr<ast::Symbol>> Program(T&&... elt) {
-//    TokenSet tokens;
-//    EVAL_FOR_EACH(tokens += std::get<Tokens>(elt));
-//    tokens.emplace_back(lexer::token::Class::End, "<end>");
-
-//    auto root = std::make_unique<ast::Set>(false);
-//    EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
-
-//    return {tokens, std::move(root)};
-//}
-
 class Program {
 public:
     template<class... T>
@@ -114,9 +114,9 @@ public:
         return _data.first;
     }
 
-    bool operator == (const std::unique_ptr<ast::Symbol> &root) const
+    bool hasSame(const std::unique_ptr<ast::Symbol> &lst) const
     {
-        return compareLST(std::get<LST>(_data), root);
+        return compareLST(std::get<LST>(_data), lst);
     }
 
 private:

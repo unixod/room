@@ -6,8 +6,12 @@
 namespace test = room::testing::lst;
 namespace lex = room::lexer;
 
-TEST_CASE("Empty source") {
-    auto pgm = test::Program();
+TEST_CASE("Correct source") {
+    auto pgm = test::Program(
+        test::Atom("k"), test::Atom("="), test::Set(
+            test::Atom("a"), test::Atom(">>"), test::Atom("b")
+        )
+    );
 
     auto token = pgm.tokens().begin();
     auto end = pgm.tokens().end();
@@ -21,7 +25,6 @@ TEST_CASE("Empty source") {
 
     auto rootSet = dynamic_cast<room::ast::Set *>(lst.get());
     REQUIRE(rootSet != nullptr);
-    REQUIRE(rootSet->elements.empty());
 
     REQUIRE(pgm.hasSame(lst));
 }

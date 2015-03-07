@@ -31,7 +31,7 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
             break;
         case lexer::token::Class::SpaceEnd:
             if (currentSet.size() == 1) {
-                throw std::domain_error{"room::lst::parse, unexpected end of space"};
+                throw std::domain_error{"room::lst::parse, unexpected SpaceEnd token"};
             }
             currentSet.pop();
             break;
@@ -43,5 +43,6 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
         }
     }
 
-    return std::move(root);
+    return (currentSet.size() == 1) ? std::move(root)
+                                    : throw std::domain_error{"room::lst::parse, unexpected end of space"};
 }
