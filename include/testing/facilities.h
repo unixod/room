@@ -4,8 +4,8 @@
 #include <string>
 #include <list>
 #include "room/utils/c++14.h"
-#include "room/ast/lst/atom.h"
-#include "room/ast/lst/set.h"
+#include "room/lst/atom.h"
+#include "room/lst/set.h"
 
 //
 // explanation of swallowing:
@@ -31,7 +31,6 @@
 
 namespace room {
 namespace testing {
-namespace lst {
 
 enum {
     Tokens,
@@ -40,47 +39,47 @@ enum {
 
 typedef std::list<lexer::Token> TokenSet;
 
-std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
+std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Atom(const std::string &name, bool quoted = false)
 {
     return {quoted ? TokenSet{lexer::Token{lexer::token::Class::Quotation, "'"}, lexer::Token{lexer::token::Class::Atom, name}}
-                   : TokenSet{lexer::Token{lexer::token::Class::Atom, name}}, std::make_unique<ast::Atom>(name, quoted)};
+                   : TokenSet{lexer::Token{lexer::token::Class::Atom, name}}, std::make_unique<lst::Atom>(name, quoted)};
 }
 
-std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
+std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 QuotedAtom(const std::string &name)
 {
     return Atom(name, true);
 }
 
-std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
+std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Error(const std::string &description)
 {
     return {{lexer::Token{lexer::token::Class::Error, description}}, nullptr};
 }
 
-std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
-Custom(lexer::Token token, std::unique_ptr<ast::Symbol> lstSymbol = nullptr)
+std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
+Custom(lexer::Token token, std::unique_ptr<lst::Symbol> lstSymbol = nullptr)
 {
     return {{token}, std::move(lstSymbol)};
 }
 
 template<class... T>
-std::pair<TokenSet, std::unique_ptr<ast::Symbol>>
+std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Set(T&&... elt)
 {
     TokenSet tokens{lexer::Token{lexer::token::Class::SpaceBegin, "{"}};
     EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
     tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
 
-    auto root = std::make_unique<ast::Set>(false);
+    auto root = std::make_unique<lst::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
     return {tokens, std::move(root)};
 }
 
 template<class... T>
-std::pair<std::string, std::unique_ptr<ast::Symbol>>
+std::pair<std::string, std::unique_ptr<lst::Symbol>>
 QuotedSet(T&&... elt)
 {
     TokenSet tokens{lexer::Token{lexer::token::Class::Quotation, "'"},
@@ -88,7 +87,7 @@ QuotedSet(T&&... elt)
     EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
     tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
 
-    auto root = std::make_unique<ast::Set>(false);
+    auto root = std::make_unique<lst::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
     return {tokens, std::move(root)};
@@ -104,8 +103,8 @@ public:
         EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
         tokens.emplace_back(lexer::token::Class::End, "<end>");
 
-        std::unique_ptr<ast::Set> root;
-        root = std::make_unique<ast::Set>(false);
+        std::unique_ptr<lst::Set> root;
+        root = std::make_unique<lst::Set>(false);
         EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
         std::get<LST>(_data) = std::move(root);
     }
@@ -114,23 +113,23 @@ public:
         return _data.first;
     }
 
-    bool hasSame(const std::unique_ptr<ast::Symbol> &lst) const
+    bool hasSame(const std::unique_ptr<lst::Symbol> &lst) const
     {
         return compareLST(std::get<LST>(_data), lst);
     }
 
 private:
-    static bool compareLST(const std::unique_ptr<ast::Symbol> &a, const std::unique_ptr<ast::Symbol> &b)
+    static bool compareLST(const std::unique_ptr<lst::Symbol> &a, const std::unique_ptr<lst::Symbol> &b)
     {
         if (a->quoted == b->quoted) {
-            if (auto set1 = dynamic_cast<ast::Set *>(a.get())) {
-                if (auto set1 = dynamic_cast<ast::Set *>(b.get())) {
+            if (auto set1 = dynamic_cast<lst::Set *>(a.get())) {
+                if (auto set1 = dynamic_cast<lst::Set *>(b.get())) {
                     return std::equal(set1->elements.begin(), set1->elements.end(),
                                       set1->elements.begin(), set1->elements.end(),
                                       compareLST);
                 }
-            } else if (auto a1 = dynamic_cast<ast::Atom *>(a.get())) {
-                if (auto a2 = dynamic_cast<ast::Atom *>(b.get())) {
+            } else if (auto a1 = dynamic_cast<lst::Atom *>(a.get())) {
+                if (auto a2 = dynamic_cast<lst::Atom *>(b.get())) {
                     return a1->name == a2->name;
                 }
             }
@@ -140,10 +139,9 @@ private:
     }
 
 private:
-    std::pair<TokenSet, std::unique_ptr<ast::Symbol>> _data;
+    std::pair<TokenSet, std::unique_ptr<lst::Symbol>> _data;
 };
 
-} // namespace lst
 } // namespace testing
 } // namespace room
 

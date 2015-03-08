@@ -5,13 +5,13 @@
 #include <functional>
 #include <stdexcept>
 #include "room/lexer/token.h"
-#include "room/ast/symbol.h"
+#include "room/lst/symbol.h"
 
 namespace room {
 namespace lst {
 
 // generator whill be called until the returns End
-std::unique_ptr<ast::Symbol> parse(std::function<lexer::Token()> generator);
+std::unique_ptr<lst::Symbol> parse(std::function<lexer::Token()> generator);
 
 } // namespace lst
 } // namespace room

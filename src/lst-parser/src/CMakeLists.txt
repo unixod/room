@@ -11,5 +11,5 @@ set(LST_PARSER_SOURCES
 add_library(${PROJECT_NAME} ${LST_PARSER_SOURCES})
 
 showFilesInIDE(
-    ${ROOM_INCLUDE_DIR}/room/ast/symbol.h
-    ${ROOM_INCLUDE_DIR}/room/lst_parser.h)
+    ${ROOM_INCLUDE_DIR}/room/lst/symbol.h
+    ${ROOM_INCLUDE_DIR}/room/lst/parser.h)

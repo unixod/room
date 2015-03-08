@@ -1,9 +1,9 @@
 #include <catch.hpp>
 #include <sstream>
-#include "room/lst_parser.h"
+#include "room/lst/parser.h"
 #include "testing/facilities.h"
 
-namespace test = room::testing::lst;
+namespace test = room::testing;
 namespace lex = room::lexer;
 
 TEST_CASE("Error token") {

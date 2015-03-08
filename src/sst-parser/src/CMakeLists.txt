@@ -11,4 +11,4 @@ cmake_minimum_required(VERSION 2.8)
 # add_library(${PROJECT_NAME} ${LST_PARSER_SOURCES})
 
  showFilesInIDE(
-     ${ROOM_INCLUDE_DIR}/room/sst_parser.h)
+     ${ROOM_INCLUDE_DIR}/room/sst/parser.h)
