@@ -6,7 +6,7 @@ include_directories(
     ${ROOM_INCLUDE_DIR})
 
 set(LST_PARSER_SOURCES
-    lst_parser.cpp)
+    parser.cpp)
 
 add_library(${PROJECT_NAME} ${LST_PARSER_SOURCES})
 
