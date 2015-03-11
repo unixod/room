@@ -23,7 +23,7 @@ TEST_CASE("Correct source") {
 
     REQUIRE(lst != nullptr);
 
-    auto rootSet = dynamic_cast<room::lst::Set *>(lst.get());
+    auto rootSet = dynamic_cast<room::ast::Set *>(lst.get());
     REQUIRE(rootSet != nullptr);
 
     REQUIRE(pgm.hasSame(lst));

@@ -11,8 +11,8 @@ cmake_minimum_required(VERSION 2.8)
  add_library(${PROJECT_NAME} ${SST_PARSER_SOURCES})
 
  showFilesInIDE(
-    ${ROOM_INCLUDE_DIR}/room/ast/perspective.h
-    ${ROOM_INCLUDE_DIR}/room/ast/space.h
-    ${ROOM_INCLUDE_DIR}/room/ast/subject.h
+    ${ROOM_INCLUDE_DIR}/room/sst/perspective.h
+    ${ROOM_INCLUDE_DIR}/room/sst/space.h
+    ${ROOM_INCLUDE_DIR}/room/sst/subject.h
     ${ROOM_INCLUDE_DIR}/room/ast/symbol.h
     ${ROOM_INCLUDE_DIR}/room/sst/parser.h)

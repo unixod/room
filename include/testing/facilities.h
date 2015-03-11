@@ -4,8 +4,8 @@
 #include <string>
 #include <list>
 #include "room/utils/c++14.h"
-#include "room/lst/atom.h"
-#include "room/lst/set.h"
+#include "room/ast/atom.h"
+#include "room/ast/set.h"
 
 //
 // explanation of swallowing:
@@ -43,7 +43,7 @@ std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Atom(const std::string &name, bool quoted = false)
 {
     return {quoted ? TokenSet{lexer::Token{lexer::token::Class::Quotation, "'"}, lexer::Token{lexer::token::Class::Atom, name}}
-                   : TokenSet{lexer::Token{lexer::token::Class::Atom, name}}, std::make_unique<lst::Atom>(name, quoted)};
+                   : TokenSet{lexer::Token{lexer::token::Class::Atom, name}}, std::make_unique<ast::Atom>(name, quoted)};
 }
 
 std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
@@ -72,7 +72,7 @@ Set(T&&... elt)
     EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
     tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
 
-    auto root = std::make_unique<lst::Set>(false);
+    auto root = std::make_unique<ast::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
     return {tokens, std::move(root)};
@@ -87,7 +87,7 @@ QuotedSet(T&&... elt)
     EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
     tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
 
-    auto root = std::make_unique<lst::Set>(false);
+    auto root = std::make_unique<ast::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
 
     return {tokens, std::move(root)};
@@ -103,8 +103,8 @@ public:
         EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
         tokens.emplace_back(lexer::token::Class::End, "<end>");
 
-        std::unique_ptr<lst::Set> root;
-        root = std::make_unique<lst::Set>(false);
+        std::unique_ptr<ast::Set> root;
+        root = std::make_unique<ast::Set>(false);
         EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
         std::get<LST>(_data) = std::move(root);
     }
@@ -122,14 +122,14 @@ private:
     static bool compareLST(const std::unique_ptr<lst::Symbol> &a, const std::unique_ptr<lst::Symbol> &b)
     {
         if (a->quoted == b->quoted) {
-            if (auto set1 = dynamic_cast<lst::Set *>(a.get())) {
-                if (auto set1 = dynamic_cast<lst::Set *>(b.get())) {
+            if (auto set1 = dynamic_cast<ast::Set *>(a.get())) {
+                if (auto set1 = dynamic_cast<ast::Set *>(b.get())) {
                     return std::equal(set1->elements.begin(), set1->elements.end(),
                                       set1->elements.begin(), set1->elements.end(),
                                       compareLST);
                 }
-            } else if (auto a1 = dynamic_cast<lst::Atom *>(a.get())) {
-                if (auto a2 = dynamic_cast<lst::Atom *>(b.get())) {
+            } else if (auto a1 = dynamic_cast<ast::Atom *>(a.get())) {
+                if (auto a2 = dynamic_cast<ast::Atom *>(b.get())) {
                     return a1->name == a2->name;
                 }
             }

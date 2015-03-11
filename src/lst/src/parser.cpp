@@ -1,8 +1,8 @@
 #include <stack>
 #include "room/utils/c++14.h"
 #include "room/lst/parser.h"
-#include "room/lst/atom.h"
-#include "room/lst/set.h"
+#include "room/ast/atom.h"
+#include "room/ast/set.h"
 
 namespace lexer = room::lexer;
 
@@ -11,9 +11,9 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
 {   
     bool quoted = false;    // next symbol should be quoted in case this flag is set
 
-    auto root = std::make_unique<room::lst::Set>(quoted);
+    auto root = std::make_unique<room::ast::Set>(quoted);
 
-    std::stack<room::lst::Set *> currentSet{{root.get()}};
+    std::stack<room::ast::Set *> currentSet{{root.get()}};
 
     for(auto token = nextToken();
         std::get<lexer::TokenClass>(token) != lexer::token::Class::End;
@@ -21,12 +21,12 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
 
         switch(std::get<lexer::TokenClass>(token)) {
         case lexer::token::Class::Atom:
-            currentSet.top()->elements.emplace_back(new room::lst::Atom(std::get<lexer::TokenLexeme>(token), quoted));
+            currentSet.top()->elements.emplace_back(new room::ast::Atom(std::get<lexer::TokenLexeme>(token), quoted));
             quoted = false;
             break;
         case lexer::token::Class::SpaceBegin:
-            room::lst::Set *subset;
-            currentSet.top()->elements.emplace_back(subset = new room::lst::Set(quoted));
+            room::ast::Set *subset;
+            currentSet.top()->elements.emplace_back(subset = new room::ast::Set(quoted));
             currentSet.push(subset);
             break;
         case lexer::token::Class::SpaceEnd:
