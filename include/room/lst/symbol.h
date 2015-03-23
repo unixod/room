@@ -14,8 +14,7 @@ public:
         : quoted(quote)
     {}
 
-    virtual ~Symbol()
-    {}
+    virtual ~Symbol() {}
 
     const bool quoted;    // lexicaly, any symbol can be quoted
 };

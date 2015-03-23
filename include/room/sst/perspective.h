@@ -1,12 +1,12 @@
 #ifndef ROOM_SST_PERSPECTIVE_H
 #define ROOM_SST_PERSPECTIVE_H
 
-#include "room/ast/symbol.h"
+#include "room/sst/symbol.h"
 
 namespace room {
 namespace sst {
 
-class Perspective : public ast::Symbol {
+class Perspective : public Symbol {
 };
 
 } // namespace sst

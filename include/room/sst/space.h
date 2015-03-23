@@ -1,12 +1,12 @@
 #ifndef ROOM_SST_SPACE_H
 #define ROOM_SST_SPACE_H
 
-#include "room/ast/symbol.h"
+#include "room/sst/symbol.h"
 
 namespace room {
 namespace sst {
 
-class Space : public ast::Symbol {
+class Space : public Symbol {
 };
 
 } // namespace sst

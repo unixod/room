@@ -14,5 +14,5 @@ cmake_minimum_required(VERSION 2.8)
     ${ROOM_INCLUDE_DIR}/room/sst/perspective.h
     ${ROOM_INCLUDE_DIR}/room/sst/space.h
     ${ROOM_INCLUDE_DIR}/room/sst/subject.h
-    ${ROOM_INCLUDE_DIR}/room/ast/symbol.h
+    ${ROOM_INCLUDE_DIR}/room/sst/symbol.h
     ${ROOM_INCLUDE_DIR}/room/sst/parser.h)
