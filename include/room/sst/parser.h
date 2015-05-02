@@ -11,7 +11,7 @@ namespace room {
 namespace sst {
 
 std::unique_ptr<sst::Space> parseSpace(std::unique_ptr<lst::Symbol>);
-std::unique_ptr<sst::Subject>  parseSubject(std::unique_ptr<lst::Symbol>);
+std::unique_ptr<sst::Subject>  parseSubject(std::unique_ptr<lst::Symbol>, Context ctx);
 std::unique_ptr<sst::Perspective> parsePerspective(std::unique_ptr<lst::Symbol>);
 
 } // namespace lst
