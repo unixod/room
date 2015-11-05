@@ -9,10 +9,11 @@
 #include "room/lexer/token.h"
 #include "room/lexer.h"
 
-namespace token = room::lexer::token;
+namespace lexer = room::lexer;
 
 namespace room {
-namespace details {
+namespace lexer {
+namespace detail {
 
 struct Re2cLexerState {
     typedef char CharType;
@@ -33,7 +34,7 @@ struct Re2cLexerState {
     CharType *marker;
 };
 
-token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> refill) {
+Token::Category nextToken(Re2cLexerState &state, std::function<void(std::size_t)> refill) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
@@ -74,35 +75,35 @@ token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> r
     //  --state.lexemeEnd   -   means "put back the consumed symbol"
     //
     ///////////////////////////////////////////////////////////////////////////
-    <COMMENT, SINGULAR_SPACE> EOI           { --state.lexemeEnd; return token::Class::Error; }
+    <COMMENT, SINGULAR_SPACE> EOI           { --state.lexemeEnd; return Token::Category::Error; }
 
     ///////////////////////////////////////////////////////////////////////////
     <COMMENT> COMMENT_DELIMITER             :=> REGULAR_SPACE
     <COMMENT> ANY                           :=> COMMENT
 
     ///////////////////////////////////////////////////////////////////////////
-    <REGULAR_SPACE> EOI                     { --state.lexemeEnd; return token::Class::End; }
+    <REGULAR_SPACE> EOI                     { --state.lexemeEnd; return Token::Category::End; }
     <REGULAR_SPACE> COMMENT_DELIMITER       :=> COMMENT
-    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return token::Class::SpaceBegin; }
-    <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return token::Class::SpaceBegin; }
-    <REGULAR_SPACE> REGULAR_SPACE_END       { return token::Class::SpaceEnd; }
-    <REGULAR_SPACE> ['] / [^ '\t\n]         { return token::Class::Quotation; }
+    <REGULAR_SPACE> SINGULAR_SPACE_BEGIN    => SINGULAR_SPACE { return Token::Category::SpaceBegin; }
+    <REGULAR_SPACE> REGULAR_SPACE_BEGIN     { return Token::Category::SpaceBegin; }
+    <REGULAR_SPACE> REGULAR_SPACE_END       { return Token::Category::SpaceEnd; }
+    <REGULAR_SPACE> ['] / [^ '\t\n]         { return Token::Category::Quotation; }
     <REGULAR_SPACE> [ \t\n]                 { ++state.lexemeStart; GOTO_COND(REGULAR_SPACE); }
-    <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return token::Class::Atom; }
-    <REGULAR_SPACE> ATOM                    { return token::Class::Atom; }
+    <REGULAR_SPACE> MUTLI_ESCAPED_ATOM      { return Token::Category::Atom; }
+    <REGULAR_SPACE> ATOM                    { return Token::Category::Atom; }
 
     ///////////////////////////////////////////////////////////////////////////
-    <SINGULAR_SPACE> ['] / [^']             { return token::Class::Quotation; }
-    <SINGULAR_SPACE> "\\" ANY               { ++state.lexemeStart; return token::Class::Atom; }
-    <SINGULAR_SPACE> SINGULAR_SPACE_END     => REGULAR_SPACE { return token::Class::SpaceEnd; }
-    <SINGULAR_SPACE> [^']                   { return token::Class::Atom; }
+    <SINGULAR_SPACE> ['] / [^']             { return Token::Category::Quotation; }
+    <SINGULAR_SPACE> "\\" ANY               { ++state.lexemeStart; return Token::Category::Atom; }
+    <SINGULAR_SPACE> SINGULAR_SPACE_END     => REGULAR_SPACE { return Token::Category::SpaceEnd; }
+    <SINGULAR_SPACE> [^']                   { return Token::Category::Atom; }
 
     ///////////////////////////////////////////////////////////////////////////
-    <*> ANY                                 { return token::Class::Error; }
+    <*> ANY                                 { return Token::Category::Error; }
 */
 }
 
-void unescapeAtomLexeme(token::Lexeme &str) {
+void unescapeAtomLexeme(Token::Lexeme &str) {
     if (!str.empty() && (str.front() == '|')) {         // multiescaped atom
         if ((str.size() > 1) && (str.back() == '|')) {
             // removing the surrounding boundaries
@@ -113,7 +114,7 @@ void unescapeAtomLexeme(token::Lexeme &str) {
         // removing back-slash espapes
         bool escapeVisited = false;
         auto trash = std::remove_if(str.begin(), str.end(),
-                                    [&escapeVisited](token::Lexeme::value_type c) {
+                                    [&escapeVisited](Token::Lexeme::value_type c) {
             escapeVisited = (c == '\\' && !escapeVisited);
             return escapeVisited;
         });
@@ -122,6 +123,7 @@ void unescapeAtomLexeme(token::Lexeme &str) {
 }
 
 } // namespace details
+} // namespace lexer
 
 
 class Lexer::Private {
@@ -154,14 +156,14 @@ public:
      * in such case, after the token-processing will be done, the stash will be contain the
      * preffix of the lexeme.
      */
-    token::Lexeme stash;
-    details::Re2cLexerState re2cState;
+    lexer::Token::Lexeme stash;
+    lexer::detail::Re2cLexerState re2cState;
     bool atEnd = false;
 
 
 private:
     std::streambuf *_source;
-    std::vector<details::Re2cLexerState::CharType> _buffer;
+    std::vector<lexer::detail::Re2cLexerState::CharType> _buffer;
 
     std::size_t _offset = 0;    // informational variable, necessary for Error messages
 };

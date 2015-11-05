@@ -42,8 +42,8 @@ typedef std::list<lexer::Token> TokenSet;
 std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Atom(const std::string &name, bool quoted = false)
 {
-    return {quoted ? TokenSet{lexer::Token{lexer::token::Class::Quotation, "'"}, lexer::Token{lexer::token::Class::Atom, name}}
-                   : TokenSet{lexer::Token{lexer::token::Class::Atom, name}}, std::make_unique<lst::Atom>(name, quoted)};
+    return {quoted ? TokenSet{lexer::Token{lexer::Token::Category::Quotation, "'"}, lexer::Token{lexer::Token::Category::Atom, name}}
+                   : TokenSet{lexer::Token{lexer::Token::Category::Atom, name}}, std::make_unique<lst::Atom>(name, quoted)};
 }
 
 std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
@@ -55,7 +55,7 @@ QuotedAtom(const std::string &name)
 std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Error(const std::string &description)
 {
-    return {{lexer::Token{lexer::token::Class::Error, description}}, nullptr};
+    return {{lexer::Token{lexer::Token::Category::Error, description}}, nullptr};
 }
 
 std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
@@ -68,9 +68,9 @@ template<class... T>
 std::pair<TokenSet, std::unique_ptr<lst::Symbol>>
 Set(T&&... elt)
 {
-    TokenSet tokens{lexer::Token{lexer::token::Class::SpaceBegin, "{"}};
+    TokenSet tokens{lexer::Token{lexer::Token::Category::SpaceBegin, "{"}};
     EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
-    tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
+    tokens.emplace_back(lexer::Token::Category::SpaceEnd, "}");
 
     auto root = std::make_unique<lst::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
@@ -82,10 +82,10 @@ template<class... T>
 std::pair<std::string, std::unique_ptr<lst::Symbol>>
 QuotedSet(T&&... elt)
 {
-    TokenSet tokens{lexer::Token{lexer::token::Class::Quotation, "'"},
-                    lexer::Token{lexer::token::Class::SpaceBegin, "{"}};
+    TokenSet tokens{lexer::Token{lexer::Token::Category::Quotation, "'"},
+                    lexer::Token{lexer::Token::Category::SpaceBegin, "{"}};
     EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
-    tokens.emplace_back(lexer::token::Class::SpaceEnd, "}");
+    tokens.emplace_back(lexer::Token::Category::SpaceEnd, "}");
 
     auto root = std::make_unique<lst::Set>(false);
     EVAL_FOR_EACH(root->elements.emplace_back(std::move(std::get<LST>(elt))));
@@ -101,7 +101,7 @@ public:
         auto &tokens = std::get<Tokens>(_data);
 
         EVAL_FOR_EACH(tokens.splice(tokens.end(), std::get<Tokens>(elt)));
-        tokens.emplace_back(lexer::token::Class::End, "<end>");
+        tokens.emplace_back(lexer::Token::Category::End, "<end>");
 
         std::unique_ptr<lst::Set> root;
         root = std::make_unique<lst::Set>(false);

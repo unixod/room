@@ -5,6 +5,7 @@
 #include "room/lst/set.h"
 
 namespace lexer = room::lexer;
+using lexer::Token;
 
 std::unique_ptr<room::lst::Symbol>
 room::lst::parse(std::function<lexer::Token ()> nextToken)
@@ -16,26 +17,26 @@ room::lst::parse(std::function<lexer::Token ()> nextToken)
     std::stack<room::lst::Set *> currentSet{{root.get()}};
 
     for(auto token = nextToken();
-        std::get<lexer::TokenClass>(token) != lexer::token::Class::End;
+        token.category != Token::Category::End;
         token = nextToken()) {
 
-        switch(std::get<lexer::TokenClass>(token)) {
-        case lexer::token::Class::Atom:
-            currentSet.top()->elements.emplace_back(new room::lst::Atom(std::get<lexer::TokenLexeme>(token), quoted));
+        switch(token.category) {
+        case Token::Category::Atom:
+            currentSet.top()->elements.emplace_back(new room::lst::Atom(std::move(token.lexeme), quoted));
             quoted = false;
             break;
-        case lexer::token::Class::SpaceBegin:
+        case Token::Category::SpaceBegin:
             room::lst::Set *subset;
             currentSet.top()->elements.emplace_back(subset = new room::lst::Set(quoted));
             currentSet.push(subset);
             break;
-        case lexer::token::Class::SpaceEnd:
+        case Token::Category::SpaceEnd:
             if (currentSet.size() == 1) {
                 throw std::domain_error{"room::lst::parse, unexpected SpaceEnd token"};
             }
             currentSet.pop();
             break;
-        case lexer::token::Class::Quotation:
+        case Token::Category::Quotation:
             quoted = true;
             break;
         default:

@@ -18,7 +18,7 @@ TEST_CASE("Correct source") {
 
     auto lst = room::lst::parse([token, end]() mutable {
         return token != end ? *token++
-                            : lex::Token{lex::token::Class::End, "<end>"};
+                            : lex::Token{lex::Token::Category::End, "<end>"};
     });
 
     REQUIRE(lst != nullptr);
