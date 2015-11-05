@@ -7,6 +7,7 @@ namespace lexer = room::lexer;
 
 /// Catch helpers
 namespace std {
+
 std::ostream & operator << (std::ostream &out, const lexer::Token &token)
 {
 
@@ -26,26 +27,13 @@ std::ostream & operator << (std::ostream &out, const lexer::Token &token)
 
     return out;
 }
+
 } // namespace std
-
-/// Helpers
-std::string unescape(std::string lexeme)
-{
-    if ((lexeme.size() > 2) &&          // is multi-escaped
-            (lexeme.front() == '|') &&
-            (lexeme.back() == '|')) {
-        lexeme.erase(lexeme.size() - 1).erase(0, 1);
-    } else {
-        auto trash = std::remove(lexeme.begin(), lexeme.end(), '\\');
-        lexeme.erase(trash, lexeme.end());
-    }
-
-    return lexeme;
-}
 
 typedef std::vector<lexer::Token> Tokens;
 
 namespace tok {
+
 template<class... T>
 Tokens set(T&&... tokens)
 {
@@ -76,6 +64,7 @@ lexer::Token error(const std::string &lexeme)
 {
     return {lexer::Token::Category::Error, lexeme};
 }
+
 } // namespace tok
 
 Tokens tokenize(std::string pgm)
@@ -102,73 +91,190 @@ Tokens tokenize(std::string pgm)
 
 TEST_CASE("Atoms tokenization") {
     SECTION("in regular space") {
-        REQUIRE(tokenize("a abc") == tok::set(tok::atom("a"), tok::atom("abc")));
-        REQUIRE(tokenize("1 12 32") == tok::set(tok::atom("1"), tok::atom("12"), tok::atom("32")));
-        REQUIRE(tokenize("1a a2b") == tok::set(tok::atom("1a"), tok::atom("a2b")));
-        REQUIRE(tokenize(". ...") == tok::set(tok::atom("."), tok::atom("...")));
+        REQUIRE(
+            tokenize("a abc")
+                ==
+            tok::set(tok::atom("a"), tok::atom("abc"))
+        );
+
+        REQUIRE(
+            tokenize("1 12 32")
+                ==
+            tok::set(tok::atom("1"), tok::atom("12"), tok::atom("32"))
+        );
+
+        REQUIRE(
+            tokenize("1a a2b")
+                    ==
+            tok::set(tok::atom("1a"), tok::atom("a2b"))
+        );
+
+        REQUIRE(
+            tokenize(". ...")
+                ==
+            tok::set(tok::atom("."), tok::atom("..."))
+        );
 
 
         SECTION("escaping") {
-            REQUIRE(tokenize("\\'a") == tok::set(tok::atom("'a")));
-            REQUIRE(tokenize("a\\ abc") == tok::set(tok::atom("a abc")));
-            REQUIRE(tokenize("a a\\b\\c") == tok::set(tok::atom("a"), tok::atom("abc")));
+            REQUIRE(
+                tokenize("\\'a")
+                    ==
+                tok::set(tok::atom("'a"))
+            );
+
+            REQUIRE(
+                tokenize("a\\ abc")
+                    ==
+                tok::set(tok::atom("a abc"))
+            );
+
+            REQUIRE(
+                tokenize("a a\\b\\c")
+                    ==
+                tok::set(tok::atom("a"), tok::atom("abc"))
+            );
         }
 
         SECTION("multiescaping") {
-            REQUIRE(tokenize("|'a|") == tok::set(tok::atom("'a")));
-            REQUIRE(tokenize("|abc|") == tok::set(tok::atom("abc")));
-            REQUIRE(tokenize("|a bc|") == tok::set(tok::atom("a bc")));
-            REQUIRE(tokenize("|a\\ bc|") == tok::set(tok::atom("a\\ bc")));
+            REQUIRE(
+                tokenize("|'a|")
+                    ==
+                tok::set(tok::atom("'a"))
+            );
+
+            REQUIRE(
+                tokenize("|abc|")
+                    ==
+                tok::set(tok::atom("abc"))
+            );
+
+            REQUIRE(
+                tokenize("|a bc|")
+                    ==
+                tok::set(tok::atom("a bc"))
+            );
+
+            REQUIRE(
+                tokenize("|a\\ bc|")
+                    ==
+                tok::set(tok::atom("a\\ bc"))
+            );
         }
 
         SECTION("quotations") {
-            REQUIRE(tokenize("a'bc") == tok::set(tok::atom("a'bc")));
-            REQUIRE(tokenize("a' bc") == tok::set(tok::atom("a'"), tok::atom("bc")));
-            REQUIRE(tokenize("'a") == tok::set(tok::quote(), tok::atom("a")));
-            REQUIRE(tokenize("a 'abc") == tok::set(tok::atom("a"), tok::quote(), tok::atom("abc")));
+            REQUIRE(
+                tokenize("a'bc")
+                    ==
+                tok::set(tok::atom("a'bc"))
+            );
+
+            REQUIRE(
+                tokenize("a' bc")
+                    ==
+                tok::set(tok::atom("a'"), tok::atom("bc"))
+            );
+
+            REQUIRE(
+                tokenize("'a")
+                    ==
+                tok::set(tok::quote(), tok::atom("a"))
+            );
+
+            REQUIRE(
+                tokenize("a 'abc")
+                    ==
+                tok::set(tok::atom("a"), tok::quote(), tok::atom("abc"))
+            );
         }
     }
 
     SECTION("in singular space") {
-        REQUIRE(tokenize("(abc)") == tok::set(tok::spaceBegin(),
-                                              tok::atom("a"), tok::atom("b"), tok::atom("c"),
-                                              tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(abc)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("a"), tok::atom("b"), tok::atom("c"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("(a abc)") == tok::set(tok::spaceBegin(),
-                                                tok::atom("a"), tok::atom(" "), tok::atom("a"), tok::atom("b"), tok::atom("c"),
-                                                tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(a abc)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("a"), tok::atom(" "), tok::atom("a"), tok::atom("b"), tok::atom("c"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("({a}b)") == tok::set(tok::spaceBegin(),
-                                                tok::atom("{"), tok::atom("a"), tok::atom("}"), tok::atom("b"),
-                                                tok::spaceEnd()));
+        REQUIRE(
+            tokenize("({a}b)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("{"), tok::atom("a"), tok::atom("}"), tok::atom("b"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("(|ab)") == tok::set(tok::spaceBegin(),
-                                              tok::atom("|"), tok::atom("a"), tok::atom("b"),
-                                              tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(|ab)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("|"), tok::atom("a"), tok::atom("b"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("('ab)") == tok::set(tok::spaceBegin(),
-                                              tok::quote(), tok::atom("a"), tok::atom("b"),
-                                              tok::spaceEnd()));
+        REQUIRE(
+            tokenize("('ab)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::quote(), tok::atom("a"), tok::atom("b"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("(a'b)") == tok::set(tok::spaceBegin(),
-                                              tok::atom("a"), tok::quote(), tok::atom("b"),
-                                              tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(a'b)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("a"), tok::quote(), tok::atom("b"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("(a\"b)") == tok::set(tok::spaceBegin(),
-                                                tok::atom("a"), tok::atom("\""), tok::atom("b"),
-                                                tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(a\"b)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("a"), tok::atom("\""), tok::atom("b"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("(a\\'b)") == tok::set(tok::spaceBegin(),
-                                                tok::atom("a"), tok::atom("'"), tok::atom("b"),
-                                                tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(a\\'b)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("a"), tok::atom("'"), tok::atom("b"),
+                     tok::spaceEnd())
+        );
 
-        REQUIRE(tokenize("(a\\)b)") == tok::set(tok::spaceBegin(),
-                                                tok::atom("a"), tok::atom(")"), tok::atom("b"),
-                                                tok::spaceEnd()));
+        REQUIRE(
+            tokenize("(a\\)b)")
+                ==
+            tok::set(tok::spaceBegin(),
+                     tok::atom("a"), tok::atom(")"), tok::atom("b"),
+                     tok::spaceEnd())
+        );
     }
 }
 
 TEST_CASE("Error handling") {
-    REQUIRE(tokenize("abc ''d efg") == tok::set(tok::atom("abc"), tok::error("offset: 4")));
-    REQUIRE(tokenize("' a") == tok::set(tok::error("offset: 0")));
+    REQUIRE(
+        tokenize("abc ''d efg")
+            ==
+        tok::set(tok::atom("abc"),
+                 tok::error("offset: 4"))
+    );
+
+    REQUIRE(
+        tokenize("' a")
+            ==
+        tok::set(tok::error("offset: 0"))
+    );
 }
