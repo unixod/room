@@ -3,7 +3,6 @@
 
 #include <string>
 #include <list>
-#include "room/utils/c++14.h"
 #include "room/lst/atom.h"
 #include "room/lst/set.h"
 

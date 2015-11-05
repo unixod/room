@@ -1,5 +1,4 @@
 #include <stack>
-#include "room/utils/c++14.h"
 #include "room/lst/parser.h"
 #include "room/lst/atom.h"
 #include "room/lst/set.h"
