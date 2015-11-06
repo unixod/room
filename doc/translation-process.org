@@ -1,0 +1,3 @@
+#-*- mode: org; -*-
+
+Lexer -[tokens]-> A-Parser -[Symbols as well as SymbolLists]-> B-Parser -[AST]-> CodeGenerator ->[Assembly]<-
