@@ -1,12 +1,12 @@
-#ifndef ROOM_AST_SYMBOL_H
-#define ROOM_AST_SYMBOL_H
+#ifndef ROOM_LST_SYMBOL_H
+#define ROOM_LST_SYMBOL_H
 
 #include <functional>
 #include "room/lexer/token.h"
-#include "room/ast/symbol.h"
+#include "room/lst/symbol.h"
 
 namespace room {
-namespace ast {
+namespace lst {
 
 class Symbol {
 public:
@@ -14,13 +14,12 @@ public:
         : quoted(quote)
     {}
 
-    virtual ~Symbol()
-    {}
+    virtual ~Symbol() {}
 
     const bool quoted;    // lexicaly, any symbol can be quoted
 };
 
-} // namespace ast
+} // namespace lst
 } // namespace room
 
-#endif // ROOM_AST_SYMBOL_H
+#endif // ROOM_LST_SYMBOL_H

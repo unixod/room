@@ -1,9 +1,9 @@
 #include <catch.hpp>
 #include <sstream>
-#include "room/lst_parser.h"
+#include "room/lst/parser.h"
 #include "testing/facilities.h"
 
-namespace test = room::testing::lst;
+namespace test = room::testing;
 namespace lex = room::lexer;
 
 TEST_CASE("Correct source") {
@@ -18,12 +18,12 @@ TEST_CASE("Correct source") {
 
     auto lst = room::lst::parse([token, end]() mutable {
         return token != end ? *token++
-                            : lex::Token{lex::token::Class::End, "<end>"};
+                            : lex::Token{lex::Token::Category::End, "<end>"};
     });
 
     REQUIRE(lst != nullptr);
 
-    auto rootSet = dynamic_cast<room::ast::Set *>(lst.get());
+    auto rootSet = dynamic_cast<room::lst::Set *>(lst.get());
     REQUIRE(rootSet != nullptr);
 
     REQUIRE(pgm.hasSame(lst));

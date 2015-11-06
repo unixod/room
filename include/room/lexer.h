@@ -2,6 +2,7 @@
 #define ROOM_LEXER_H
 
 #include <memory>
+#include <iterator>
 #include <iosfwd>
 #include "room/lexer/token.h"
 
@@ -14,13 +15,12 @@ public:
 
     ~Lexer();
 
-    Lexer & operator >> (lexer::Token &);
-    operator bool() const;
+    lexer::Token nextToken();
     std::size_t currentOffset() const noexcept;
 
 private:
     class Private;
-    std::unique_ptr<Private> d_ptr;
+    std::unique_ptr<Private> _impl;
 };
 
 }
