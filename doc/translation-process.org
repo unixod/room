@@ -1,3 +1,17 @@
 #-*- mode: org; -*-
 
-Lexer -[tokens]-> A-Parser -[Symbols as well as SymbolLists]-> B-Parser -[AST]-> CodeGenerator ->[Assembly]<-
+                             +--<Parser>--------------------------------------+
+                             |                    Symbols                     |
+Program--> [Lexer] --tokens--+---> [α-Parser] ----- and ------> [̱β-Parser] ---+--AST--> [CodeGenerator] ->Assembly<-
+                             |                   SymbolLists                  |
+                             +------------------------------------------------+
+
+* Lexer
+Производит лексический анализ программы
+- Вход :: Текст программы на Room
+- Выход :: Поток токенов
+* Parser
+Производить синтаксический анализ программы. Т.к. общая структура любой прорамы Room описывается одним языком 
+** Alpha-parser (α-Parser)
+** Beta-parser (β-Parser)
+* CodeGenerator
