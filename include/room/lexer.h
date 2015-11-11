@@ -23,6 +23,6 @@ private:
     std::unique_ptr<Private> _impl;
 };
 
-}
+} // namespace room
 
 #endif // ROOM_LEXER_H
