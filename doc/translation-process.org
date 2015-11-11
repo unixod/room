@@ -1,10 +1,13 @@
 #-*- mode: org; -*-
 
+
+#+BEGIN_EXAMPLE
                              +--<Parser>--------------------------------------+
                              |                    Symbols                     |
-Program--> [Lexer] --tokens--+---> [α-Parser] ----- and ------> [̱β-Parser] ---+--AST--> [CodeGenerator] ->Assembly<-
+Program--> [Lexer] --tokens--+---> [α-Parser] ----- and ------> [β-Parser] ---+--AST--> [CodeGenerator] ->Assembly<-
                              |                   SymbolLists                  |
                              +------------------------------------------------+
+#+END_EXAMPLE
 
 * Lexer
 Производит лексический анализ программы
