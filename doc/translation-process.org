@@ -2,11 +2,11 @@
 
 
 #+BEGIN_EXAMPLE
-                             +--<Parser>--------------------------------------+
-                             |                    Symbols                     |
-Program--> [Lexer] --tokens--+---> [α-Parser] ----- and ------> [β-Parser] ---+--AST--> [CodeGenerator] ->Assembly<-
-                             |                   SymbolLists                  |
-                             +------------------------------------------------+
+                                +--<Parser>------------------+
+                                +----------+                 |
+  program--> [Lexer] --tokens-->+ α-Parser |---->AtomTree    +--AST-->[CodeGenerator]-->Assembly
+                                +----------+                 |
+                                +----------------------------+
 #+END_EXAMPLE
 
 * Lexer

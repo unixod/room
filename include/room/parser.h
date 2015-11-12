@@ -5,7 +5,6 @@
 #include "room/lexer/token.h"
 
 namespace room {
-
 namespace parser {
 
 class Ast;
