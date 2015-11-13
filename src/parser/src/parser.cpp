@@ -16,7 +16,7 @@ Ast makeAst(detail::AtomTree);
 
 Ast room::parse(std::function<lexer::Token()> generator)
 {
-    auto atomTree = detail::alpha_parse(std::move(generator));
+    auto atomTree = detail::alphaParse(std::move(generator));
 
     return makeAst(std::move(atomTree));
 }

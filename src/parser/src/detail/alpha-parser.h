@@ -10,7 +10,7 @@ namespace detail {
 
 class AtomTree;
 
-AtomTree alpha_parse(std::function<lexer::Token()> generator);
+AtomTree alphaParse(std::function<lexer::Token()> generator);
 
 } // namespace detail
 } // namespace parser
