@@ -1,0 +1,22 @@
+#-*- mode: org; -*-
+
+
+#+BEGIN_EXAMPLE
+                                +--<Parser>------------------+
+                                +----------+                 |
+  program--> [Lexer] --tokens-->+ α-Parser |---->AtomTree    +--AST-->[CodeGenerator]-->Assembly
+                                +----------+                 |
+                                +----------------------------+
+#+END_EXAMPLE
+
+* Lexer
+Производит лексический анализ программы
+- Вход :: текст программы на Room
+- Выход :: поток токенов
+* Alpha-parser (α-Parser)
+- Вход :: поток токенов
+- Выход :: дерево атомов 
+* Parser
+- Вход :: дерево атомов
+- Выход :: AST
+* CodeGenerator

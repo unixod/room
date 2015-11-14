@@ -1,11 +1,11 @@
-#ifndef ROOM_AST_LST_ATOM_H
-#define ROOM_AST_LST_ATOM_H
+#ifndef ROOM_LST_ATOM_H
+#define ROOM_LST_ATOM_H
 
 #include <string>
-#include "room/ast/symbol.h"
+#include "room/lst/symbol.h"
 
 namespace room {
-namespace ast {
+namespace lst {
 
 class Atom : public Symbol {
 public:
@@ -16,9 +16,9 @@ public:
     const std::string name;
 };
 
-} // namespace ast
+} // namespace lst
 } // namespace room
 
-#endif // ROOM_AST_LST_ATOM_H
+#endif // ROOM_LST_ATOM_H
 
 

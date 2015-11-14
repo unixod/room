@@ -3,47 +3,60 @@
 #include "lexer_p.h"
 
 namespace lexer = room::lexer;
+namespace detail = lexer::detail;
+
+using lexer::Token;
 
 room::Lexer::Lexer(std::istream &is)
-    : d_ptr{new Private{is.rdbuf(), 256}}
+    : _impl{new Private{is.rdbuf(), 256}}
 {}
 
 room::Lexer::Lexer(room::Lexer &&lexer)
-    : d_ptr{std::move(lexer.d_ptr)}
+    : _impl{std::move(lexer._impl)}
 {}
 
 room::Lexer::~Lexer()
 {}
 
-room::Lexer & room::Lexer::operator >> (lexer::Token &token)
+Token room::Lexer::nextToken()
 {
-    if (not d_ptr->atEnd) {
-        auto &tokenClass = std::get<lexer::TokenClass>(token);
+    if (_impl->atEnd) {
+        #define STRINGIFY2(x) #x
+        #define STRINGIFY(x) STRINGIFY2(x)
 
-        tokenClass = details::nextToken(d_ptr->re2cState, [&](std::size_t n){ d_ptr->refill(n); });
-        if (tokenClass != token::Class::End) {
-            d_ptr->stash.append(d_ptr->re2cState.lexemeStart, d_ptr->re2cState.lexemeEnd);
+        throw std::runtime_error{
+            __FILE__ ":" STRINGIFY(__LINE__) ", Internal error: end of input"
+        };
 
-            if (tokenClass == token::Class::Atom) {
-                details::unescapeAtomLexeme(d_ptr->stash);
-            }
+        #undef STRINGIFY
+        #undef STRINGIFY2
+    }
+    
+    auto category = detail::nextToken(_impl->re2cState, [&](std::size_t n){ _impl->refill(n); });
 
-            std::swap(std::get<lexer::TokenLexeme>(token), d_ptr->stash);
-            d_ptr->stash.clear();
-        } else {
-            d_ptr->atEnd = true;
+    Token::Lexeme lexeme;
+
+    switch (category) {
+    case Token::Category::End:
+    case Token::Category::Error:
+        _impl->atEnd = true;
+        _impl->stash.clear();
+        break;
+    default:
+        _impl->stash.append(_impl->re2cState.lexemeStart, _impl->re2cState.lexemeEnd);
+
+        if (category == Token::Category::Atom) {
+            detail::unescapeAtomLexeme(_impl->stash);
         }
+
+        std::swap(lexeme, _impl->stash);
     }
 
-    return *this;
+    return {category, lexeme};
 }
 
 std::size_t room::Lexer::currentOffset() const noexcept
 {
-    return d_ptr->currentOffset();
+    return _impl->currentOffset();
 }
 
-room::Lexer::operator bool() const
-{
-    return not d_ptr->atEnd;
-}

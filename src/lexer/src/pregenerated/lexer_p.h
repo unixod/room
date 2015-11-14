@@ -11,10 +11,11 @@
 #include "room/lexer/token.h"
 #include "room/lexer.h"
 
-namespace token = room::lexer::token;
+namespace lexer = room::lexer;
 
 namespace room {
-namespace details {
+namespace lexer {
+namespace detail {
 
 struct Re2cLexerState {
     typedef char CharType;
@@ -35,7 +36,7 @@ struct Re2cLexerState {
     CharType *marker;
 };
 
-token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> refill) {
+Token::Category nextToken(Re2cLexerState &state, std::function<void(std::size_t)> refill) {
 #   define GOTO_COND(condition_name) goto cond_##condition_name
 #   define YYGETCONDITION() state.cond
 #   define YYSETCONDITION(x) { state.cond = (x); }
@@ -47,7 +48,7 @@ token::Class nextToken(Re2cLexerState &state, std::function<void(std::size_t)> r
     state.marker = state.inputBufferEnd;
 
 
-#line 51 "lexer_p.h"
+#line 52 "lexer_p.h"
 {
     Re2cLexerState::CharType yych;
     switch (YYGETCONDITION()) {
@@ -66,20 +67,20 @@ cond_COMMENT:
     }
 yy3:
     ++state.lexemeEnd;
-#line 77 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { --state.lexemeEnd; return token::Class::Error; }
-#line 72 "lexer_p.h"
+#line 78 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { --state.lexemeEnd; return Token::Category::Error; }
+#line 73 "lexer_p.h"
 yy5:
     ++state.lexemeEnd;
-#line 81 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+#line 82 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
     goto cond_COMMENT;
-#line 77 "lexer_p.h"
+#line 78 "lexer_p.h"
 yy7:
     ++state.lexemeEnd;
     YYSETCONDITION(REGULAR_SPACE);
-#line 80 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+#line 81 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
     goto cond_REGULAR_SPACE;
-#line 83 "lexer_p.h"
+#line 84 "lexer_p.h"
 /* *********************************** */
 cond_REGULAR_SPACE:
     if ((state.inputBufferEnd - state.lexemeEnd) < 2) refill(2);
@@ -99,23 +100,23 @@ cond_REGULAR_SPACE:
     }
 yy11:
     ++state.lexemeEnd;
-#line 84 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { --state.lexemeEnd; return token::Class::End; }
-#line 105 "lexer_p.h"
+#line 85 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { --state.lexemeEnd; return Token::Category::End; }
+#line 106 "lexer_p.h"
 yy13:
     ++state.lexemeEnd;
     yych = *state.lexemeEnd;
     goto yy29;
 yy14:
-#line 92 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Atom; }
-#line 113 "lexer_p.h"
+#line 93 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Atom; }
+#line 114 "lexer_p.h"
 yy15:
     ++state.lexemeEnd;
 yy16:
-#line 90 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+#line 91 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
     { ++state.lexemeStart; GOTO_COND(REGULAR_SPACE); }
-#line 119 "lexer_p.h"
+#line 120 "lexer_p.h"
 yy17:
     yych = *++state.lexemeEnd;
     switch (yych) {
@@ -138,9 +139,9 @@ yy18:
     }
 yy19:
     YYSETCONDITION(COMMENT);
-#line 85 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+#line 86 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
     goto cond_COMMENT;
-#line 144 "lexer_p.h"
+#line 145 "lexer_p.h"
 yy20:
     state.ctxMarker = state.lexemeEnd + 1;
     ++state.lexemeEnd;
@@ -152,15 +153,15 @@ yy20:
     default:    goto yy37;
     }
 yy21:
-#line 101 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Error; }
-#line 158 "lexer_p.h"
+#line 102 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Error; }
+#line 159 "lexer_p.h"
 yy22:
     ++state.lexemeEnd;
     YYSETCONDITION(SINGULAR_SPACE);
-#line 86 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::SpaceBegin; }
-#line 164 "lexer_p.h"
+#line 87 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::SpaceBegin; }
+#line 165 "lexer_p.h"
 yy24:
     yych = *++state.lexemeEnd;
     switch (yych) {
@@ -186,9 +187,9 @@ yy26:
     default:    goto yy29;
     }
 yy27:
-#line 87 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::SpaceBegin; }
-#line 192 "lexer_p.h"
+#line 88 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::SpaceBegin; }
+#line 193 "lexer_p.h"
 yy28:
     ++state.lexemeEnd;
     if (state.inputBufferEnd <= state.lexemeEnd) refill(1);
@@ -226,15 +227,15 @@ yy34:
     goto yy21;
 yy35:
     ++state.lexemeEnd;
-#line 91 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Atom; }
-#line 232 "lexer_p.h"
+#line 92 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Atom; }
+#line 233 "lexer_p.h"
 yy37:
     ++state.lexemeEnd;
     state.lexemeEnd = state.ctxMarker;
-#line 89 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Quotation; }
-#line 238 "lexer_p.h"
+#line 90 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Quotation; }
+#line 239 "lexer_p.h"
 /* *********************************** */
 cond_SINGULAR_SPACE:
     if ((state.inputBufferEnd - state.lexemeEnd) < 2) refill(2);
@@ -248,14 +249,14 @@ cond_SINGULAR_SPACE:
     }
 yy41:
     ++state.lexemeEnd;
-#line 77 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { --state.lexemeEnd; return token::Class::Error; }
-#line 254 "lexer_p.h"
+#line 78 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { --state.lexemeEnd; return Token::Category::Error; }
+#line 255 "lexer_p.h"
 yy43:
     ++state.lexemeEnd;
-#line 98 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Atom; }
-#line 259 "lexer_p.h"
+#line 99 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Atom; }
+#line 260 "lexer_p.h"
 yy45:
     state.ctxMarker = state.lexemeEnd + 1;
     ++state.lexemeEnd;
@@ -264,33 +265,33 @@ yy45:
     default:    goto yy52;
     }
 yy46:
-#line 101 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Error; }
-#line 270 "lexer_p.h"
+#line 102 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Error; }
+#line 271 "lexer_p.h"
 yy47:
     ++state.lexemeEnd;
     YYSETCONDITION(REGULAR_SPACE);
-#line 97 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::SpaceEnd; }
-#line 276 "lexer_p.h"
+#line 98 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::SpaceEnd; }
+#line 277 "lexer_p.h"
 yy49:
     yych = *++state.lexemeEnd;
     ++state.lexemeEnd;
-#line 96 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { ++state.lexemeStart; return token::Class::Atom; }
-#line 282 "lexer_p.h"
+#line 97 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { ++state.lexemeStart; return Token::Category::Atom; }
+#line 283 "lexer_p.h"
 yy52:
     ++state.lexemeEnd;
     state.lexemeEnd = state.ctxMarker;
-#line 95 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
-    { return token::Class::Quotation; }
-#line 288 "lexer_p.h"
+#line 96 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+    { return Token::Category::Quotation; }
+#line 289 "lexer_p.h"
 }
-#line 102 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
+#line 103 "/home/eldar/MyProjs/room/src/lexer/src/lexer_p"
 
 }
 
-void unescapeAtomLexeme(token::Lexeme &str) {
+void unescapeAtomLexeme(Token::Lexeme &str) {
     if (!str.empty() && (str.front() == '|')) {         // multiescaped atom
         if ((str.size() > 1) && (str.back() == '|')) {
             // removing the surrounding boundaries
@@ -301,7 +302,7 @@ void unescapeAtomLexeme(token::Lexeme &str) {
         // removing back-slash espapes
         bool escapeVisited = false;
         auto trash = std::remove_if(str.begin(), str.end(),
-                                    [&escapeVisited](token::Lexeme::value_type c) {
+                                    [&escapeVisited](Token::Lexeme::value_type c) {
             escapeVisited = (c == '\\' && !escapeVisited);
             return escapeVisited;
         });
@@ -310,6 +311,7 @@ void unescapeAtomLexeme(token::Lexeme &str) {
 }
 
 } // namespace details
+} // namespace lexer
 
 
 class Lexer::Private {
@@ -342,14 +344,14 @@ public:
      * in such case, after the token-processing will be done, the stash will be contain the
      * preffix of the lexeme.
      */
-    token::Lexeme stash;
-    details::Re2cLexerState re2cState;
+    lexer::Token::Lexeme stash;
+    lexer::detail::Re2cLexerState re2cState;
     bool atEnd = false;
 
 
 private:
     std::streambuf *_source;
-    std::vector<details::Re2cLexerState::CharType> _buffer;
+    std::vector<lexer::detail::Re2cLexerState::CharType> _buffer;
 
     std::size_t _offset = 0;    // informational variable, necessary for Error messages
 };

@@ -9,15 +9,15 @@ include_directories(
 
 precompileCatch(catch)
 
-addTest("LST-parser:empty_source" empty_source
+addTest("LST-parser:empty_source" alpha/empty_source
         OBJECT_LIBS ${catch}
         LIBS lexer lst-parser)
 
-addTest("LST-parser:correct_source" correct_source
+addTest("LST-parser:correct_source" alpha/correct_source
         OBJECT_LIBS ${catch}
         LIBS lexer lst-parser)
 
-addTest("LST-parser:incorrect_source" incorrect_source
+addTest("LST-parser:incorrect_source" alpha/incorrect_source
         OBJECT_LIBS ${catch}
         LIBS lexer lst-parser)
 

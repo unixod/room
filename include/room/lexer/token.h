@@ -5,26 +5,39 @@
 
 namespace room {
 namespace lexer {
-namespace token {
 
-enum class Class {
-    SpaceBegin,
-    SpaceEnd,
-    Quotation,
-    Atom,
-    End,
-    Error
+class Token {
+public:
+    enum class Category {
+        SpaceBegin,
+        SpaceEnd,
+        Quotation,
+        Atom,
+        End,
+        Error
+    };
+
+    using Lexeme = std::string;
+
+    Token(Category c, Lexeme l)
+        : category{std::move(c)}, lexeme{std::move(l)}
+    {}
+
+    Category category;
+    Lexeme lexeme;
 };
 
-typedef std::string Lexeme;
 
-} // namespace token
+inline bool operator == (const Token &t1, const Token &t2)
+{
+    return (t1.category == t2.category) &&
+             ((t1.category != Token::Category::Atom) || (t1.lexeme == t2.lexeme));  // currently, lexeme comparision is sensible for Atoms only
+}
 
-enum {
-    TokenClass, TokenLexeme
-};
-
-typedef std::pair<token::Class, token::Lexeme> Token;
+inline bool operator != (const Token &t1, const Token &t2)
+{
+    return !(t1 == t2);
+}
 
 } // namespace lexer
 } // namespace room

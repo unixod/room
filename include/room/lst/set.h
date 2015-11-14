@@ -1,14 +1,14 @@
-#ifndef ROOM_AST_LST_SET_H
-#define ROOM_AST_LST_SET_H
+#ifndef ROOM_LST_SET_H
+#define ROOM_LST_SET_H
 
 #include <vector>
 #include <memory>
-#include "room/ast/symbol.h"
+#include "room/lst/symbol.h"
 
 namespace room {
-namespace ast {
+namespace lst {
 
-class Set : public Symbol {
+class Set : public Symbol{
 public:
     Set(bool quoted)
         : Symbol(quoted)
@@ -17,9 +17,9 @@ public:
     std::vector<std::unique_ptr<Symbol>> elements;
 };
 
-} // namespace ast
+} // namespace lst
 } // namespace room
 
-#endif // ROOM_AST_LST_SET_H
+#endif // ROOM_LST_SET_H
 
 
