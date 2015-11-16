@@ -2,11 +2,11 @@
 
 
 #+BEGIN_EXAMPLE
-                                +--<Parser>------------------+
-                                +----------+                 |
-  program--> [Lexer] --tokens-->+ α-Parser |---->AtomTree    +--AST-->[CodeGenerator]-->Assembly
-                                +----------+                 |
-                                +----------------------------+
+                                +--<Parser>----------------+
+                                +----------+               |
+  program--> [Lexer] --tokens-->+ α-Parser |--->AtomSet    +--AST-->[CodeGenerator]-->Assembly
+                                +----------+               |
+                                +--------------------------+
 #+END_EXAMPLE
 
 * Lexer
@@ -15,7 +15,7 @@
 - Выход :: поток токенов
 * Alpha-parser (α-Parser)
 - Вход :: поток токенов
-- Выход :: дерево атомов 
+- Выход :: структура множества-атомы
 * Parser
 - Вход :: дерево атомов
 - Выход :: AST

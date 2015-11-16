@@ -8,9 +8,9 @@ namespace room {
 namespace parser {
 namespace detail {
 
-class AtomTree;
+class AtomSet;
 
-AtomTree alphaParse(std::function<lexer::Token()> generator);
+AtomSet alphaParse(std::function<lexer::Token()> generator);
 
 } // namespace detail
 } // namespace parser

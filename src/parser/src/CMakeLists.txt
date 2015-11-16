@@ -15,4 +15,4 @@ add_library(${PROJECT_NAME}
 showFilesInIDE(
     ${ROOM_INCLUDE_DIR}/room/parser.h
     ${ROOM_INCLUDE_DIR}/room/parser/ast.h
-    detail/atom-tree.h)
+    detail/atom-set.h)

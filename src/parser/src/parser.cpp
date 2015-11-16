@@ -1,7 +1,7 @@
 #include "room/parser.h"
 #include "room/parser/ast.h"
 #include "detail/alpha-parser.h"
-#include "detail/atom-tree.h"
+#include "detail/atom-set.h"
 
 using room::parser::Ast;
 namespace detail = room::parser::detail;
@@ -9,14 +9,14 @@ namespace detail = room::parser::detail;
 
 namespace {
 
-Ast makeAst(detail::AtomTree);
+Ast makeAst(detail::AtomSet);
 
 } // namespace
 
 
 Ast room::parse(std::function<lexer::Token()> generator)
 {
-    auto atomTree = detail::alphaParse(std::move(generator));
+    auto atomSet = detail::alphaParse(std::move(generator));
 
     return makeAst(std::move(atomTree));
 }
@@ -24,7 +24,7 @@ Ast room::parse(std::function<lexer::Token()> generator)
 
 namespace {
 
-Ast makeAst(detail::AtomTree atomTree)
+Ast makeAst(detail::AtomSet atomTree)
 {
 }
 

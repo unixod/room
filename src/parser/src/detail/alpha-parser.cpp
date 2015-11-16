@@ -3,6 +3,6 @@
 
 namespace detail = room::parser::detail;
 
-detail::AtomTree detail::alphaParse(std::function<room::lexer::Token ()> generator)
+detail::AtomSet detail::alphaParse(std::function<room::lexer::Token ()> generator)
 {
 }
