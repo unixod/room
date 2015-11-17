@@ -7,6 +7,10 @@ namespace room {
 namespace parser {
 namespace detail {
 
+template<class T>
+using StripType = std::remove_cv<
+                    typename std::remove_reference<T>::type>;
+
 /**
  * @brief The AtomSet struct
  *
@@ -46,23 +50,56 @@ namespace detail {
  */
 struct AtomSet {
     enum class Type {
-        Atom, Set
+        Set, Atom
     };
+
+    struct SetDescription {
+        bool quoted = false;
+        AtomSet *child = nullptr;
+    };
+
+    struct AtomDescription {
+        bool quoted = false;
+        std::string name;
+    };
+
+
+
+    template<class Description>
+    AtomSet(Description&& descr, typename std::enable_if<std::is_same<typename StripType<Description>::type, SetDescription>::value>::type* = nullptr)
+        : type{Type::Set}
+    {
+        new (&set) Description{std::forward<Description>(descr)};
+    }
+
+    template<class Description>
+    AtomSet(Description&& descr, typename std::enable_if<std::is_same<typename StripType<Description>::type, AtomDescription>::value>::type* = nullptr)
+        : type{Type::Atom}
+    {
+        new (&atom) Description{std::forward<Description>(descr)};
+    }
+
+    AtomSet(AtomSet &&)
+    noexcept (std::is_nothrow_move_constructible<SetDescription>::value &&
+              std::is_nothrow_move_constructible<AtomDescription>::value);
+
+    AtomSet(const AtomSet &) = delete;
+    ~AtomSet();
+
+    AtomSet & operator = (AtomSet &&)
+    noexcept (std::is_nothrow_move_assignable<SetDescription>::value &&
+              std::is_nothrow_move_assignable<AtomDescription>::value);
+
+    AtomSet & operator = (const AtomSet &);
+
 
     Type type;
     AtomSet* sibling = nullptr;
 
     union {
-        struct {
-            bool quoted = false;
-            AtomSet *child = nullptr;
-        } set;
-
-        struct {
-            bool quoted = false;
-            std::string name;
-        } atom;
-    } description;
+        SetDescription set;
+        AtomDescription atom;
+    };
 };
 
 } // namespace detail

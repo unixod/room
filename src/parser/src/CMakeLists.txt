@@ -7,7 +7,8 @@ include_directories(
 
 set(PARSER_SOURCES
     parser.cpp
-    detail/alpha-parser.cpp)
+    detail/alpha-parser.cpp
+    detail/atom-set.cpp)
 
 add_library(${PROJECT_NAME}
     ${PARSER_SOURCES})

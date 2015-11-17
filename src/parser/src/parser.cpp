@@ -6,26 +6,19 @@
 using room::parser::Ast;
 namespace detail = room::parser::detail;
 
-
-namespace {
-
-Ast makeAst(detail::AtomSet);
-
-} // namespace
+static Ast makeAst(detail::AtomSet);
 
 
 Ast room::parse(std::function<lexer::Token()> generator)
 {
     auto atomSet = detail::alphaParse(std::move(generator));
 
-    return makeAst(std::move(atomTree));
+    return makeAst(std::move(atomSet));
 }
 
 
-namespace {
-
-Ast makeAst(detail::AtomSet atomTree)
+static Ast makeAst(detail::AtomSet atomTree)
 {
 }
 
-} // namespace
+

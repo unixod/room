@@ -1,5 +1,5 @@
 #include "detail/alpha-parser.h"
-#include "detail/atom-tree.h"
+#include "detail/atom-set.h"
 
 namespace detail = room::parser::detail;
 
