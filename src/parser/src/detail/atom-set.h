@@ -64,19 +64,18 @@ struct AtomSet {
     };
 
 
-
     template<class Description>
     AtomSet(Description&& descr, typename std::enable_if<std::is_same<typename StripType<Description>::type, SetDescription>::value>::type* = nullptr)
         : type{Type::Set}
     {
-        new (&set) Description{std::forward<Description>(descr)};
+        new (&set) SetDescription{std::forward<Description>(descr)};
     }
 
     template<class Description>
     AtomSet(Description&& descr, typename std::enable_if<std::is_same<typename StripType<Description>::type, AtomDescription>::value>::type* = nullptr)
         : type{Type::Atom}
     {
-        new (&atom) Description{std::forward<Description>(descr)};
+        new (&atom) AtomDescription{std::forward<Description>(descr)};
     }
 
     AtomSet(AtomSet &&)
@@ -91,7 +90,6 @@ struct AtomSet {
               std::is_nothrow_move_assignable<AtomDescription>::value);
 
     AtomSet & operator = (const AtomSet &);
-
 
     Type type;
     AtomSet* sibling = nullptr;

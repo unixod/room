@@ -31,7 +31,7 @@
 namespace room {
 namespace testing {
 
-enum {
+/*enum {
     Tokens,
     LST
 };
@@ -139,7 +139,7 @@ private:
 
 private:
     std::pair<TokenSet, std::unique_ptr<lst::Symbol>> _data;
-};
+};*/
 
 } // namespace testing
 } // namespace room
