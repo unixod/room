@@ -2,6 +2,7 @@
 #define ROOM_PARSER_DETAIL_ATOM_SET_H
 
 #include <string>
+#include <cassert>
 
 namespace room {
 namespace parser {
@@ -50,7 +51,8 @@ using StripType = std::remove_cv<
  */
 struct AtomSet {
     enum class Type {
-        Set, Atom
+        Set, Atom,
+        Undefined   // means the the contend was moved to another AtomSet
     };
 
     struct SetDescription {
@@ -85,20 +87,37 @@ struct AtomSet {
     AtomSet(const AtomSet &) = delete;
     ~AtomSet();
 
-    AtomSet & operator = (AtomSet &&)
+    AtomSet& operator = (AtomSet &&)
     noexcept (std::is_nothrow_move_assignable<SetDescription>::value &&
               std::is_nothrow_move_assignable<AtomDescription>::value);
 
-    AtomSet & operator = (const AtomSet &);
+    AtomSet& operator = (const AtomSet &) = delete;
 
     Type type;
     AtomSet* sibling = nullptr;
 
+    SetDescription& asSet();
+    AtomDescription& asAtom();
+
+private:
     union {
         SetDescription set;
         AtomDescription atom;
     };
 };
+
+inline AtomSet::SetDescription& AtomSet::asSet()
+{
+    assert(type == Type::Set);
+    return set;
+}
+
+inline AtomSet::AtomDescription& AtomSet::asAtom()
+{
+    assert(type == Type::Atom);
+
+    return atom;
+}
 
 } // namespace detail
 } // namespace parser

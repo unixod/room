@@ -14,8 +14,9 @@ TEST_CASE("Initialization")
         };
 
         REQUIRE(node1.type == AtomSet::Type::Set);
-        REQUIRE(node1.set.quoted == quoted);
-        REQUIRE(node1.set.child == nullptr);
+        REQUIRE(node1.sibling == nullptr);
+        REQUIRE(node1.asSet().quoted == quoted);
+        REQUIRE(node1.asSet().child == nullptr);
 
 
         AtomSet node2 = AtomSet::SetDescription {
@@ -23,8 +24,9 @@ TEST_CASE("Initialization")
         };
 
         REQUIRE(node2.type == AtomSet::Type::Set);
-        REQUIRE(node2.set.quoted == not quoted);
-        REQUIRE(node2.set.child == &node1);
+        REQUIRE(node2.sibling == nullptr);
+        REQUIRE(node2.asSet().quoted == not quoted);
+        REQUIRE(node2.asSet().child == &node1);
     }
 
     SECTION("Atom")
@@ -37,19 +39,48 @@ TEST_CASE("Initialization")
             };
 
             REQUIRE(node.type == AtomSet::Type::Atom);
-            REQUIRE(node.atom.quoted == quoted);
-            REQUIRE(node.atom.name == atomName);
+            REQUIRE(node.sibling == nullptr);
+            REQUIRE(node.asAtom().quoted == quoted);
+            REQUIRE(node.asAtom().name == atomName);
         }
     }
 }
 
-TEST_CASE("Copying")
+TEST_CASE("Movement")
 {
-}
+//    constexpr auto quoted = true;
 
-TEST_CASE("Moving")
-{
+//    SECTION("Set") {
+//        AtomSet initial = AtomSet::SetDescription {
+//            quoted, nullptr
+//        };
 
+//        AtomSet sibling = AtomSet::SetDescription {
+//            quoted, nullptr
+//        };
+
+//        AtomSet child = AtomSet::SetDescription {
+//            quoted, nullptr
+//        };
+
+//        initial.sibling = &sibling;
+//        initial.asSet().child = &child;
+
+//        SECTION("Initialization")
+//        {
+//            AtomSet node = std::move(initial);
+
+////            REQUIRE(node.type == initial.type);
+////            REQUIRE(node.sibling == initial.sibling);
+////            REQUIRE(node.asSet().quoted == node.asSet().quoted);
+////            REQUIRE(node.asSet().child == node.asSet().child);
+//        }
+
+//        SECTION("Assignment")
+//        {
+
+//        }
+//    }
 }
 
 TEST_CASE("Access to description")

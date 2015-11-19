@@ -1,3 +1,5 @@
+#include <stdexcept>
+#include "room/common.h"
 #include "detail/atom-set.h"
 
 namespace detail = room::parser::detail;
@@ -6,14 +8,24 @@ detail::AtomSet::AtomSet(detail::AtomSet&& oth)
 noexcept (std::is_nothrow_move_constructible<detail::AtomSet::SetDescription>::value &&
           std::is_nothrow_move_constructible<detail::AtomSet::AtomDescription>::value)
 {
-    switch(type = oth.type) {
+    switch(oth.type) {
     case Type::Set:
-        set = std::move(oth.set);
+        new(&set) SetDescription{std::move(oth.set)};
         break;
     case Type::Atom:
-        atom = std::move(oth.atom);
+        new(&atom) AtomDescription{std::move(oth.atom)};
+        break;
+    case Type::Undefined:
+        throw std::runtime_error {
+            ERROR_MSG "Internal error, attempt to initialize from 'Undefined' AtomSet"
+        };
         break;
     }
+
+    type = oth.type;
+    sibling = std::move(oth.sibling);
+
+    oth.type = Type::Undefined;
 }
 
 detail::AtomSet::~AtomSet()
@@ -25,6 +37,9 @@ detail::AtomSet::~AtomSet()
     case Type::Atom:
         atom.~AtomDescription();
         break;
+    case Type::Undefined:
+        /*none*/
+        break;
     }
 }
 
@@ -32,28 +47,26 @@ detail::AtomSet & detail::AtomSet::operator = (detail::AtomSet&& oth)
 noexcept (std::is_nothrow_move_assignable<SetDescription>::value &&
           std::is_nothrow_move_assignable<AtomDescription>::value)
 {
-    switch(type = oth.type) {
+    switch(oth.type) {
     case Type::Set:
-        set = std::move(oth.set);
+        this->~AtomSet();
+        new(&set) SetDescription{std::move(oth.set)};
         break;
     case Type::Atom:
-        atom = std::move(oth.atom);
+        this->~AtomSet();
+        new(&atom) AtomDescription{std::move(oth.atom)};
+        break;
+    case Type::Undefined:
+        throw std::runtime_error {
+            ERROR_MSG "Internal error, attempt to assign 'Undefined' AtomSet"
+        };
         break;
     }
 
-    return *this;
-}
+    type = oth.type;
+    sibling = std::move(oth.sibling);
 
-detail::AtomSet & detail::AtomSet::operator = (const detail::AtomSet& oth)
-{
-    switch(type = oth.type) {
-    case Type::Set:
-        set = oth.set;
-        break;
-    case Type::Atom:
-        atom = oth.atom;
-        break;
-    }
+    oth.type = Type::Undefined;
 
     return *this;
 }
