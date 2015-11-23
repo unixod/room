@@ -1,7 +1,29 @@
 #include <catch.hpp>
+#include "testing/facilities.h"
 #include "detail/atom-set.h"
 
 using room::parser::detail::AtomSet;
+
+/// Helpers
+namespace Catch {
+
+template<>
+struct StringMaker<AtomSet::Type> {
+    static std::string convert(const AtomSet::Type &type)
+    {
+        switch(type) {
+        case AtomSet::Type::Atom:
+            return "AtomSet::Type::Atom";
+        case AtomSet::Type::Set:
+            return "AtomSet::Type::Set";
+        case AtomSet::Type::Undefined:
+            return "AtomSet::Type::Undefined";
+        }
+    }
+};
+
+} // namespace Catch
+
 
 TEST_CASE("Initialization")
 {
