@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cassert>
+#include <memory>
 
 namespace room {
 namespace parser {
@@ -57,7 +58,7 @@ struct AtomSet {
 
     struct SetDescription {
         bool quoted = false;
-        AtomSet *child = nullptr;
+        std::unique_ptr<AtomSet> child;
     };
 
     struct AtomDescription {
@@ -94,7 +95,7 @@ struct AtomSet {
     AtomSet& operator = (const AtomSet &) = delete;
 
     Type type;
-    AtomSet* sibling = nullptr;
+    std::unique_ptr<AtomSet> sibling;
 
     SetDescription& asSet();
     AtomDescription& asAtom();

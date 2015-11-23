@@ -7,26 +7,16 @@ TEST_CASE("Initialization")
 {
     SECTION("Set")
     {
-        constexpr auto quoted = true;
+        for (auto &&quoted : {true, false}) {
+            AtomSet node = AtomSet::SetDescription {
+                quoted, nullptr
+            };
 
-        AtomSet node1 = AtomSet::SetDescription {
-            quoted, nullptr
-        };
-
-        REQUIRE(node1.type == AtomSet::Type::Set);
-        REQUIRE(node1.sibling == nullptr);
-        REQUIRE(node1.asSet().quoted == quoted);
-        REQUIRE(node1.asSet().child == nullptr);
-
-
-        AtomSet node2 = AtomSet::SetDescription {
-            not quoted, &node1
-        };
-
-        REQUIRE(node2.type == AtomSet::Type::Set);
-        REQUIRE(node2.sibling == nullptr);
-        REQUIRE(node2.asSet().quoted == not quoted);
-        REQUIRE(node2.asSet().child == &node1);
+            REQUIRE(node.type == AtomSet::Type::Set);
+            REQUIRE(node.sibling == nullptr);
+            REQUIRE(node.asSet().quoted == quoted);
+            REQUIRE(node.asSet().child == nullptr);
+        }
     }
 
     SECTION("Atom")
@@ -44,6 +34,28 @@ TEST_CASE("Initialization")
             REQUIRE(node.asAtom().name == atomName);
         }
     }
+
+
+    constexpr auto quoted = true;
+    constexpr auto atomName = "some";
+    AtomSet root = AtomSet::SetDescription {
+        quoted, std::make_unique<AtomSet>(
+                    AtomSet::AtomDescription {
+                        quoted, atomName
+                    }
+                )
+    };
+
+    REQUIRE(root.type == AtomSet::Type::Set);
+    REQUIRE(root.sibling == nullptr);
+    REQUIRE(root.asSet().quoted == quoted);
+    REQUIRE(root.asSet().child != nullptr);
+
+    auto &&child = root.asSet().child;
+    REQUIRE(child->type == AtomSet::Type::Atom);
+    REQUIRE(child->sibling == nullptr);
+    REQUIRE(child->asAtom().quoted == quoted);
+    REQUIRE(child->asAtom().name == atomName);
 }
 
 TEST_CASE("Movement")
