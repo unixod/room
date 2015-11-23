@@ -5,30 +5,31 @@
 
 namespace lexer = room::lexer;
 
-/// Catch helpers
-namespace std {
+/// Helpers
+namespace Catch {
 
-std::ostream & operator << (std::ostream &out, const lexer::Token &token)
-{
-
-    switch(token.category) {
-    case lexer::Token::Category::Atom:        out << "Atom";
-        out << "{" << token.lexeme << "}";
-        break;
-    case lexer::Token::Category::Error:       out << "Error";
-        out << "{" << token.lexeme << "}";
-        break;
-    case lexer::Token::Category::SpaceBegin:  out << "SpaceBegin"; break;
-    case lexer::Token::Category::SpaceEnd:    out << "SpaceEnd";   break;
-    case lexer::Token::Category::Quotation:   out << "Quotation";  break;
-    case lexer::Token::Category::End:         out << "End";        break;
-    default:                        out << "Unknown";
+template<>
+struct StringMaker<lexer::Token> {
+    static std::string convert(const lexer::Token &token)
+    {
+        switch(token.category) {
+        case lexer::Token::Category::Atom:
+            return "Atom{" + token.lexeme + "}";
+        case lexer::Token::Category::Error:
+            return "Error{" + token.lexeme + "}";
+        case lexer::Token::Category::SpaceBegin:
+            return "SpaceBegin";
+        case lexer::Token::Category::SpaceEnd:
+            return "SpaceEnd";
+        case lexer::Token::Category::Quotation:
+            return "Quotation";
+        case lexer::Token::Category::End:
+            return "End";
+        }
     }
+};
 
-    return out;
-}
-
-} // namespace std
+} // namespace Catch
 
 typedef std::vector<lexer::Token> Tokens;
 
