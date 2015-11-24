@@ -260,7 +260,3 @@ TEST_CASE("Assignment")
     }
 }
 
-TEST_CASE("Access to description")
-{
-
-}
