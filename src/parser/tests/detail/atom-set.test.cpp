@@ -145,7 +145,119 @@ TEST_CASE("Initialization")
 
 TEST_CASE("Assignment")
 {
+    constexpr bool quoted = true;
 
+    SECTION("Atom")
+    {
+        AtomSet src = AtomSet::AtomDescription {
+            not quoted, "src"
+        };
+
+        src.sibling = std::make_unique<AtomSet>(AtomSet::AtomDescription{
+                                                    not quoted, "sibling"
+                                                });
+
+        SECTION("To Atom")
+        {
+            AtomSet node = AtomSet::AtomDescription {
+                quoted, "node"
+            };
+
+            node = std::move(src);
+
+            REQUIRE(node.type == AtomSet::Type::Atom);
+            REQUIRE(node.asAtom().quoted == not quoted);
+            REQUIRE(node.asAtom().name == "src");
+
+            REQUIRE(node.sibling != nullptr);
+            REQUIRE(node.sibling->type == AtomSet::Type::Atom);
+            REQUIRE(node.sibling->sibling == nullptr);
+            REQUIRE(node.sibling->asAtom().quoted == not quoted);
+            REQUIRE(node.sibling->asAtom().name == "sibling");
+        }
+
+        SECTION("To Set")
+        {
+            AtomSet node = AtomSet::SetDescription {
+                quoted, nullptr
+            };
+
+            node = std::move(src);
+
+            REQUIRE(node.type == AtomSet::Type::Atom);
+            REQUIRE(node.asAtom().quoted == not quoted);
+            REQUIRE(node.asAtom().name == "src");
+
+            REQUIRE(node.sibling != nullptr);
+            REQUIRE(node.sibling->type == AtomSet::Type::Atom);
+            REQUIRE(node.sibling->sibling == nullptr);
+            REQUIRE(node.sibling->asAtom().quoted == not quoted);
+            REQUIRE(node.sibling->asAtom().name == "sibling");
+        }
+    }
+
+    SECTION("Set")
+    {
+        AtomSet src = AtomSet::SetDescription {
+                not quoted, std::make_unique<AtomSet>(AtomSet::AtomDescription{
+                                                          quoted, "child"
+                                                      })
+        };
+
+        src.sibling = std::make_unique<AtomSet>(AtomSet::AtomDescription{
+                                                    not quoted, "sibling"
+                                                });
+
+        SECTION("To Atom")
+        {
+            AtomSet node = AtomSet::AtomDescription {
+                quoted, "node"
+            };
+
+            node = std::move(src);
+
+            REQUIRE(node.type == AtomSet::Type::Set);
+            REQUIRE(node.asSet().quoted == not quoted);
+            REQUIRE(node.asSet().child != nullptr);
+
+            auto &&child = node.asSet().child;
+            REQUIRE(child->type == AtomSet::Type::Atom);
+            REQUIRE(child->sibling == nullptr);
+            REQUIRE(child->asAtom().quoted == quoted);
+            REQUIRE(child->asAtom().name == "child");
+
+            REQUIRE(node.sibling != nullptr);
+            REQUIRE(node.sibling->type == AtomSet::Type::Atom);
+            REQUIRE(node.sibling->sibling == nullptr);
+            REQUIRE(node.sibling->asAtom().quoted == not quoted);
+            REQUIRE(node.sibling->asAtom().name == "sibling");
+        }
+
+        SECTION("To Set")
+        {
+            AtomSet node = AtomSet::SetDescription {
+                quoted, nullptr
+            };
+
+            node = std::move(src);
+
+            REQUIRE(node.type == AtomSet::Type::Set);
+            REQUIRE(node.asSet().quoted == not quoted);
+            REQUIRE(node.asSet().child != nullptr);
+
+            auto &&child = node.asSet().child;
+            REQUIRE(child->type == AtomSet::Type::Atom);
+            REQUIRE(child->sibling == nullptr);
+            REQUIRE(child->asAtom().quoted == quoted);
+            REQUIRE(child->asAtom().name == "child");
+
+            REQUIRE(node.sibling != nullptr);
+            REQUIRE(node.sibling->type == AtomSet::Type::Atom);
+            REQUIRE(node.sibling->sibling == nullptr);
+            REQUIRE(node.sibling->asAtom().quoted == not quoted);
+            REQUIRE(node.sibling->asAtom().name == "sibling");
+        }
+    }
 }
 
 TEST_CASE("Access to description")
