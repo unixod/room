@@ -49,6 +49,8 @@ TEST_CASE("Initialization")
 
                 AtomSet newNode = std::move(node);
 
+                REQUIRE(node.type == AtomSet::Type::Undefined);
+
                 REQUIRE(newNode.type == AtomSet::Type::Atom);
                 REQUIRE(newNode.asAtom().quoted == quoted);
                 REQUIRE(newNode.asAtom().name == "node");
@@ -81,6 +83,8 @@ TEST_CASE("Initialization")
                                                          });
 
                 AtomSet newNode = std::move(node);
+
+                REQUIRE(node.type == AtomSet::Type::Undefined);
 
                 REQUIRE(newNode.type == AtomSet::Type::Set);
                 REQUIRE(newNode.asSet().quoted == quoted);
@@ -122,6 +126,8 @@ TEST_CASE("Initialization")
                                                          });
 
                 AtomSet newNode = std::move(node);
+
+                REQUIRE(node.type == AtomSet::Type::Undefined);
 
                 REQUIRE(newNode.type == AtomSet::Type::Set);
                 REQUIRE(newNode.asSet().quoted == quoted);
@@ -165,6 +171,8 @@ TEST_CASE("Assignment")
 
             node = std::move(src);
 
+            REQUIRE(src.type == AtomSet::Type::Undefined);
+
             REQUIRE(node.type == AtomSet::Type::Atom);
             REQUIRE(node.asAtom().quoted == not quoted);
             REQUIRE(node.asAtom().name == "src");
@@ -183,6 +191,8 @@ TEST_CASE("Assignment")
             };
 
             node = std::move(src);
+
+            REQUIRE(src.type == AtomSet::Type::Undefined);
 
             REQUIRE(node.type == AtomSet::Type::Atom);
             REQUIRE(node.asAtom().quoted == not quoted);
@@ -216,6 +226,8 @@ TEST_CASE("Assignment")
 
             node = std::move(src);
 
+            REQUIRE(src.type == AtomSet::Type::Undefined);
+
             REQUIRE(node.type == AtomSet::Type::Set);
             REQUIRE(node.asSet().quoted == not quoted);
             REQUIRE(node.asSet().child != nullptr);
@@ -240,6 +252,8 @@ TEST_CASE("Assignment")
             };
 
             node = std::move(src);
+
+            REQUIRE(src.type == AtomSet::Type::Undefined);
 
             REQUIRE(node.type == AtomSet::Type::Set);
             REQUIRE(node.asSet().quoted == not quoted);
