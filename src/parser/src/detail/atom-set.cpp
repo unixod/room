@@ -16,9 +16,7 @@ noexcept (std::is_nothrow_move_constructible<detail::AtomSet::SetDescription>::v
         new(&atom) AtomDescription{std::move(oth.atom)};
         break;
     case Type::Undefined:
-        throw std::runtime_error {
-            ERROR_MSG "Internal error, attempt to initialize from 'Undefined' AtomSet"
-        };
+        throw std::runtime_error{INTERNAL_ERROR "attempt to initialize from 'Undefined' AtomSet"};
         break;
     }
 
@@ -57,9 +55,7 @@ noexcept (std::is_nothrow_move_assignable<SetDescription>::value &&
         new(&atom) AtomDescription{std::move(oth.atom)};
         break;
     case Type::Undefined:
-        throw std::runtime_error {
-            ERROR_MSG "Internal error, attempt to assign 'Undefined' AtomSet"
-        };
+        throw std::runtime_error{INTERNAL_ERROR "attempt to assign 'Undefined' AtomSet"};
         break;
     }
 

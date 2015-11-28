@@ -2,6 +2,7 @@
 #define ROOM_PARSER_DETAIL_ALPHA_PARSER_H
 
 #include <functional>
+#include <memory>
 #include "room/lexer/token.h"
 
 namespace room {
@@ -10,7 +11,7 @@ namespace detail {
 
 class AtomSet;
 
-AtomSet alphaParse(std::function<lexer::Token()> generator);
+std::unique_ptr<AtomSet> makeAtomSet(std::function<lexer::Token()> generator);
 
 } // namespace detail
 } // namespace parser

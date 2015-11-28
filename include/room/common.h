@@ -7,4 +7,7 @@
 #define ERROR_MSG \
     __FILE__ ":" STRINGIFY(__LINE__) ", "
 
+#define INTERNAL_ERROR \
+    __FILE__ ":" STRINGIFY(__LINE__) ": internal error: "
+
 #endif // ROOM_COMMON_H
