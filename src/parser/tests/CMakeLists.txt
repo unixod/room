@@ -26,5 +26,9 @@ addTest("detail:AtomSet" detail/atom-set
         OBJECT_LIBS ${catch}
         LIBS parser)
 
+addTest("detail:AtomSet" detail/alpha-parser
+        OBJECT_LIBS ${catch}
+        LIBS parser)
+
 showFilesInIDE(
     ${ROOM_INCLUDE_DIR}/testing/facilities.h)

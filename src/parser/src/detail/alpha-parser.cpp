@@ -14,7 +14,7 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
     std::unique_ptr<AtomSet> *insertionPoint = &result;
     std::stack<decltype(insertionPoint)> insetionLevelStack;
 
-    for (bool quoted = false;;) {
+    for (bool quoted = false, endReached = false; !endReached;) {
         auto token = nextToken();
 
         switch (token.category) {
@@ -60,6 +60,7 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
             if ((!insetionLevelStack.empty()) || (quoted == true)) {
                 throw std::runtime_error{ERROR_MSG "unexpected end of space"};
             }
+            endReached = true;
             break;
 
         case Token::Category::Error:
