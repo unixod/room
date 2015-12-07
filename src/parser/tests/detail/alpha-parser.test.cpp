@@ -7,26 +7,103 @@ using room::parser::detail::makeAtomSet;
 using room::parser::detail::AtomSet;
 using room::lexer::Token;
 
-auto tokenize(const char *)
+/* tokenizer is a simplified version of Room's lexer
+ * simplification is as follows:
+ *   1. There are no singular spaces;
+ *   2. Atom's name must consists of only characters in range from 'a' to 'z';
+ *   3. Atom's name must be one-character;
+ *   3. There are neither comments nor escaping nor multiline support;
+ */
+auto tokenize(const char *form)
 {
-    return []{return Token{Token::Category::End, "none"};};
+    std::vector<Token> tokens;
+
+    while(char thing = *form++) {
+        switch(thing){
+        case '\'':
+            tokens.emplace_back(Token::Category::Quotation, "");
+            break;
+        case '{':
+            tokens.emplace_back(Token::Category::SpaceBegin, "");
+            break;
+        case '}':
+            tokens.emplace_back(Token::Category::SpaceEnd, "");
+            break;
+        default:    // skip all things except characters in range from 'a' to 'z'
+            if ((thing >= 'a') && (thing <= 'z')) {
+                auto atomName = std::string{form-1, form}; // string representation of thing
+                tokens.emplace_back(Token::Category::Atom, atomName);
+            }
+            break;
+        }
+    }
+
+    return [i = std::size_t(0), tokens]() mutable {
+        if (i < tokens.size()) {
+            return tokens[i++];
+        } else {
+            return Token{Token::Category::End, ""};
+        }
+    };
 }
 
-std::string stringify(std::unique_ptr<AtomSet> std)
+std::string stringify(std::unique_ptr<AtomSet> atomSet)
 {
-    return "none";
+    std::string result;
+
+    for(; atomSet; atomSet = std::move(atomSet->sibling)) {
+        switch (atomSet->type) {
+        case AtomSet::Type::Atom: {
+            auto&& atom = atomSet->asAtom();
+
+            if (atom.quoted) {
+                result += '\'';
+            }
+            result += atom.name;
+
+            break;
+        }
+        case AtomSet::Type::Set: {
+            auto&& set = atomSet->asSet();
+
+            if (set.quoted) {
+                result += '\'';
+            }
+            result += '{';
+            result += stringify(std::move(set.child));
+            result += "}";
+            break;
+        }
+        case AtomSet::Type::Undefined:
+            throw std::runtime_error{"stringify: something goes wrong"};
+        }
+
+        result += ' ';
+    }
+
+
+    // trim trailing whitespaces
+    auto rTrimPos = result.find_last_not_of(' ');
+    if (rTrimPos == std::string::npos) {
+        result.clear();
+    } else if (rTrimPos + 1 < result.size()){
+        result.erase(rTrimPos + 1);
+    }
+
+    return result;
 }
 
 TEST_CASE("processing valid sequence of tokens")
 {
     auto references = {
         "",                         // empty token set
-        "a b c",                    // only atoms
-        "() () (() () ( () ) )",    // only sets
-        "a (b c) d",                // sets and atoms
+        "a b 'c",                   // only atoms
+        "{} {} '{{} {} '{'{}}}",    // only sets
+        "'a {b 'c} d",              // sets and atoms
     };
 
     for (auto &&ref : references) {
+        CAPTURE(ref);
         REQUIRE(stringify(makeAtomSet(tokenize(ref))) == ref);
     }
 }

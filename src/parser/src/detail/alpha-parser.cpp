@@ -27,17 +27,22 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
             quoted = false;
             break;
 
-        case Token::Category::SpaceBegin:
+        case Token::Category::SpaceBegin: {
             *insertionPoint = std::make_unique<AtomSet>(AtomSet::SetDescription{
                                                             quoted, nullptr
                                                         });
 
+
+            auto &&child = &(*insertionPoint)->asSet().child;
+
             insertionPoint = &(*insertionPoint)->sibling;
             insetionLevelStack.push(insertionPoint);
 
-            insertionPoint = &(*insertionPoint)->asSet().child;
+            insertionPoint = child;
+
             quoted = false;
             break;
+        }
 
         case Token::Category::SpaceEnd:
             if (insetionLevelStack.empty()) {
