@@ -7,7 +7,8 @@ include_directories(
 
 set(PARSER_SOURCES
     parser.cpp
-    detail/alpha-parser.cpp)
+    detail/alpha-parser.cpp
+    detail/atom-set.cpp)
 
 add_library(${PROJECT_NAME}
     ${PARSER_SOURCES})
@@ -15,4 +16,4 @@ add_library(${PROJECT_NAME}
 showFilesInIDE(
     ${ROOM_INCLUDE_DIR}/room/parser.h
     ${ROOM_INCLUDE_DIR}/room/parser/ast.h
-    detail/atom-tree.h)
+    detail/atom-set.h)

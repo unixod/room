@@ -1,4 +1,5 @@
 #include <istream>
+#include "room/common.h"
 #include "room/lexer.h"
 #include "lexer_p.h"
 
@@ -21,15 +22,9 @@ room::Lexer::~Lexer()
 Token room::Lexer::nextToken()
 {
     if (_impl->atEnd) {
-        #define STRINGIFY2(x) #x
-        #define STRINGIFY(x) STRINGIFY2(x)
-
-        throw std::runtime_error{
-            __FILE__ ":" STRINGIFY(__LINE__) ", Internal error: end of input"
+        throw std::runtime_error {
+            ERROR_MSG "Internal error: end of input"
         };
-
-        #undef STRINGIFY
-        #undef STRINGIFY2
     }
     
     auto category = detail::nextToken(_impl->re2cState, [&](std::size_t n){ _impl->refill(n); });

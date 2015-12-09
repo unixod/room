@@ -4,22 +4,16 @@ include(addTest)
 include(precompileCatch)
 
 include_directories(
-    ${3RDPARTY_LIB_DIR}/Catch/single_include
-    ${ROOM_INCLUDE_DIR})
+    ${PARSER_SOURCE_DIR}
+    ${ROOM_INCLUDE_DIR}
+    ${3RDPARTY_LIB_DIR}/Catch/single_include)
 
 precompileCatch(catch)
 
-addTest("LST-parser:empty_source" alpha/empty_source
+addTest("detail:AtomSet" detail/atom-set
         OBJECT_LIBS ${catch}
-        LIBS lexer lst-parser)
+        LIBS parser)
 
-addTest("LST-parser:correct_source" alpha/correct_source
+addTest("detail:AtomSet" detail/alpha-parser
         OBJECT_LIBS ${catch}
-        LIBS lexer lst-parser)
-
-addTest("LST-parser:incorrect_source" alpha/incorrect_source
-        OBJECT_LIBS ${catch}
-        LIBS lexer lst-parser)
-
-showFilesInIDE(
-    ${ROOM_INCLUDE_DIR}/testing/facilities.h)
+        LIBS parser)

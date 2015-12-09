@@ -41,3 +41,6 @@ set(3RDPARTY_LIB_DIR
 
 add_subdirectory(src)
 
+showFilesInIDE(
+    ${ROOM_INCLUDE_DIR}/room/common.h)
+
