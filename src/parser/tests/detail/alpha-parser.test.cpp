@@ -1,5 +1,4 @@
 #include <catch.hpp>
-#include "testing/facilities.h"
 #include "detail/alpha-parser.h"
 #include "detail/atom-set.h"
 
@@ -93,17 +92,34 @@ std::string stringify(std::unique_ptr<AtomSet> atomSet)
     return result;
 }
 
-TEST_CASE("processing valid sequence of tokens")
+TEST_CASE("making AtomSet from correct formed sequence of tokens")
 {
-    auto references = {
+    auto sequences = {
         "",                         // empty token set
         "a b 'c",                   // only atoms
         "{} {} '{{} {} '{'{}}}",    // only sets
         "'a {b 'c} d",              // sets and atoms
     };
 
-    for (auto &&ref : references) {
-        CAPTURE(ref);
-        REQUIRE(stringify(makeAtomSet(tokenize(ref))) == ref);
+    for (auto &&seq : sequences) {
+        CAPTURE(seq);
+        REQUIRE(stringify(makeAtomSet(tokenize(seq))) == seq);
     }
 }
+
+TEST_CASE("handling of incorrect formed sequence of tokens")
+{
+    auto sequences = {
+        "}",                        // unexpected SpaceEnd
+        "{'}",                      // quoted SpaceEnd
+        "''a",                      // contiues quotation
+        "{",                        // unexpected end of space
+        "a '"                       // unexpected end of space
+    };
+
+    for (auto &&seq : sequences) {
+        CAPTURE(seq);
+        REQUIRE_THROWS_AS(makeAtomSet(tokenize(seq)), std::runtime_error);
+    }
+}
+

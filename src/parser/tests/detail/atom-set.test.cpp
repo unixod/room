@@ -1,5 +1,4 @@
 #include <catch.hpp>
-#include "testing/facilities.h"
 #include "detail/atom-set.h"
 
 using room::parser::detail::AtomSet;

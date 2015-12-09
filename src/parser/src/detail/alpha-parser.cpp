@@ -12,7 +12,7 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
 
     std::unique_ptr<AtomSet> result;
     std::unique_ptr<AtomSet> *insertionPoint = &result;
-    std::stack<decltype(insertionPoint)> insetionLevelStack;
+    std::stack<decltype(insertionPoint)> insertionLevelStack;
 
     for (bool quoted = false, endReached = false; !endReached;) {
         auto token = nextToken();
@@ -36,7 +36,7 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
             auto &&child = &(*insertionPoint)->asSet().child;
 
             insertionPoint = &(*insertionPoint)->sibling;
-            insetionLevelStack.push(insertionPoint);
+            insertionLevelStack.push(insertionPoint);
 
             insertionPoint = child;
 
@@ -45,13 +45,13 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
         }
 
         case Token::Category::SpaceEnd:
-            if (insetionLevelStack.empty()) {
+            if (insertionLevelStack.empty()) {
                 throw std::runtime_error{ERROR_MSG "unexpected [SpaceEnd]"};
             } else if (quoted == true) {
                 throw std::runtime_error{ERROR_MSG "[SpaceEnd] can't be quoted"};
             }
-            insertionPoint = insetionLevelStack.top();
-            insetionLevelStack.pop();
+            insertionPoint = insertionLevelStack.top();
+            insertionLevelStack.pop();
             break;
 
         case Token::Category::Quotation:
@@ -62,7 +62,7 @@ detail::makeAtomSet(std::function<room::lexer::Token()> nextToken)
             break;
 
         case Token::Category::End:
-            if ((!insetionLevelStack.empty()) || (quoted == true)) {
+            if ((!insertionLevelStack.empty()) || (quoted == true)) {
                 throw std::runtime_error{ERROR_MSG "unexpected end of space"};
             }
             endReached = true;
