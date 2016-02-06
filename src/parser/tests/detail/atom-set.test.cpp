@@ -25,6 +25,18 @@ struct StringMaker<AtomSet::Type> {
 
 } // namespace Catch
 
+bool operator == (const AtomSet::SetDescription& lhs, const AtomSet::SetDescription &rhs)
+{
+    return (lhs.quoted == rhs.quoted) &&
+            (lhs.child == rhs.child);
+}
+
+bool operator == (const AtomSet::AtomDescription& lhs, const AtomSet::AtomDescription &rhs)
+{
+    return (lhs.quoted == rhs.quoted) &&
+            (lhs.name == rhs.name);
+}
+
 
 TEST_CASE("Initialization")
 {
@@ -39,6 +51,7 @@ TEST_CASE("Initialization")
             REQUIRE(node.sibling == nullptr);
             REQUIRE(node.asAtom().quoted == quoted);
             REQUIRE(node.asAtom().name == "node");
+            REQUIRE(node.asAtom() == static_cast<const AtomSet&>(node).asAtom());
 
             SECTION("Move construction")
             {
@@ -53,12 +66,14 @@ TEST_CASE("Initialization")
                 REQUIRE(newNode.type == AtomSet::Type::Atom);
                 REQUIRE(newNode.asAtom().quoted == quoted);
                 REQUIRE(newNode.asAtom().name == "node");
+                REQUIRE(newNode.asAtom() == static_cast<const AtomSet&>(newNode).asAtom());
 
                 REQUIRE(newNode.sibling != nullptr);
                 REQUIRE(newNode.sibling->type == AtomSet::Type::Atom);
                 REQUIRE(newNode.sibling->sibling == nullptr);
                 REQUIRE(newNode.sibling->asAtom().quoted == false);
                 REQUIRE(newNode.sibling->asAtom().name == "sibling");
+                REQUIRE(newNode.sibling->asAtom() == static_cast<const AtomSet&>(*newNode.sibling).asAtom());
             }
         }
     }
@@ -74,6 +89,7 @@ TEST_CASE("Initialization")
             REQUIRE(node.sibling == nullptr);
             REQUIRE(node.asSet().quoted == quoted);
             REQUIRE(node.asSet().child == nullptr);
+            REQUIRE(node.asSet() == static_cast<const AtomSet&>(node).asSet());
 
             SECTION("Move construction")
             {
@@ -88,12 +104,14 @@ TEST_CASE("Initialization")
                 REQUIRE(newNode.type == AtomSet::Type::Set);
                 REQUIRE(newNode.asSet().quoted == quoted);
                 REQUIRE(newNode.asSet().child == nullptr);
+                REQUIRE(newNode.asSet() == static_cast<const AtomSet&>(newNode).asSet());
 
                 REQUIRE(newNode.sibling != nullptr);
                 REQUIRE(newNode.sibling->type == AtomSet::Type::Atom);
                 REQUIRE(newNode.sibling->sibling == nullptr);
                 REQUIRE(newNode.sibling->asAtom().quoted == false);
                 REQUIRE(newNode.sibling->asAtom().name == "sibling");
+                REQUIRE(newNode.sibling->asAtom() == static_cast<const AtomSet&>(*newNode.sibling).asAtom());
             }
         }
     }
@@ -111,12 +129,14 @@ TEST_CASE("Initialization")
             REQUIRE(node.sibling == nullptr);
             REQUIRE(node.asSet().quoted == quoted);
             REQUIRE(node.asSet().child != nullptr);
+            REQUIRE(node.asSet() == static_cast<const AtomSet&>(node).asSet());
 
             auto &&child = node.asSet().child;
             REQUIRE(child->type == AtomSet::Type::Atom);
             REQUIRE(child->sibling == nullptr);
             REQUIRE(child->asAtom().quoted == true);
             REQUIRE(child->asAtom().name == "child");
+            REQUIRE(child->asAtom() == static_cast<const AtomSet&>(*child).asAtom());
 
             SECTION("Move construction")
             {
@@ -131,18 +151,21 @@ TEST_CASE("Initialization")
                 REQUIRE(newNode.type == AtomSet::Type::Set);
                 REQUIRE(newNode.asSet().quoted == quoted);
                 REQUIRE(newNode.asSet().child != nullptr);
+                REQUIRE(newNode.asSet() == static_cast<const AtomSet&>(newNode).asSet());
 
                 auto &&child = newNode.asSet().child;
                 REQUIRE(child->type == AtomSet::Type::Atom);
                 REQUIRE(child->sibling == nullptr);
                 REQUIRE(child->asAtom().quoted == true);
                 REQUIRE(child->asAtom().name == "child");
+                REQUIRE(child->asAtom() == static_cast<const AtomSet&>(*child).asAtom());
 
                 REQUIRE(newNode.sibling != nullptr);
                 REQUIRE(newNode.sibling->type == AtomSet::Type::Atom);
                 REQUIRE(newNode.sibling->sibling == nullptr);
                 REQUIRE(newNode.sibling->asAtom().quoted == false);
                 REQUIRE(newNode.sibling->asAtom().name == "sibling");
+                REQUIRE(newNode.sibling->asAtom() == static_cast<const AtomSet&>(*newNode.sibling).asAtom());
             }
         }
     }
@@ -175,12 +198,14 @@ TEST_CASE("Assignment")
             REQUIRE(node.type == AtomSet::Type::Atom);
             REQUIRE(node.asAtom().quoted == not quoted);
             REQUIRE(node.asAtom().name == "src");
+            REQUIRE(node.asAtom() == static_cast<const AtomSet&>(node).asAtom());
 
             REQUIRE(node.sibling != nullptr);
             REQUIRE(node.sibling->type == AtomSet::Type::Atom);
             REQUIRE(node.sibling->sibling == nullptr);
             REQUIRE(node.sibling->asAtom().quoted == not quoted);
             REQUIRE(node.sibling->asAtom().name == "sibling");
+            REQUIRE(node.sibling->asAtom() == static_cast<const AtomSet&>(*node.sibling).asAtom());
         }
 
         SECTION("To Set")
@@ -196,12 +221,14 @@ TEST_CASE("Assignment")
             REQUIRE(node.type == AtomSet::Type::Atom);
             REQUIRE(node.asAtom().quoted == not quoted);
             REQUIRE(node.asAtom().name == "src");
+            REQUIRE(node.asAtom() == static_cast<const AtomSet&>(node).asAtom());
 
             REQUIRE(node.sibling != nullptr);
             REQUIRE(node.sibling->type == AtomSet::Type::Atom);
             REQUIRE(node.sibling->sibling == nullptr);
             REQUIRE(node.sibling->asAtom().quoted == not quoted);
             REQUIRE(node.sibling->asAtom().name == "sibling");
+            REQUIRE(node.sibling->asAtom() == static_cast<const AtomSet&>(*node.sibling).asAtom());
         }
     }
 
@@ -230,18 +257,21 @@ TEST_CASE("Assignment")
             REQUIRE(node.type == AtomSet::Type::Set);
             REQUIRE(node.asSet().quoted == not quoted);
             REQUIRE(node.asSet().child != nullptr);
+            REQUIRE(node.asSet() == static_cast<const AtomSet&>(node).asSet());
 
             auto &&child = node.asSet().child;
             REQUIRE(child->type == AtomSet::Type::Atom);
             REQUIRE(child->sibling == nullptr);
             REQUIRE(child->asAtom().quoted == quoted);
             REQUIRE(child->asAtom().name == "child");
+            REQUIRE(child->asAtom() == static_cast<const AtomSet&>(*child).asAtom());
 
             REQUIRE(node.sibling != nullptr);
             REQUIRE(node.sibling->type == AtomSet::Type::Atom);
             REQUIRE(node.sibling->sibling == nullptr);
             REQUIRE(node.sibling->asAtom().quoted == not quoted);
             REQUIRE(node.sibling->asAtom().name == "sibling");
+            REQUIRE(node.sibling->asAtom() == static_cast<const AtomSet&>(*node.sibling).asAtom());
         }
 
         SECTION("To Set")
@@ -257,18 +287,21 @@ TEST_CASE("Assignment")
             REQUIRE(node.type == AtomSet::Type::Set);
             REQUIRE(node.asSet().quoted == not quoted);
             REQUIRE(node.asSet().child != nullptr);
+            REQUIRE(node.asSet() == static_cast<const AtomSet&>(node).asSet());
 
             auto &&child = node.asSet().child;
             REQUIRE(child->type == AtomSet::Type::Atom);
             REQUIRE(child->sibling == nullptr);
             REQUIRE(child->asAtom().quoted == quoted);
             REQUIRE(child->asAtom().name == "child");
+            REQUIRE(child->asAtom() == static_cast<const AtomSet&>(*child).asAtom());
 
             REQUIRE(node.sibling != nullptr);
             REQUIRE(node.sibling->type == AtomSet::Type::Atom);
             REQUIRE(node.sibling->sibling == nullptr);
             REQUIRE(node.sibling->asAtom().quoted == not quoted);
             REQUIRE(node.sibling->asAtom().name == "sibling");
+            REQUIRE(node.sibling->asAtom() == static_cast<const AtomSet&>(*node.sibling).asAtom());
         }
     }
 }

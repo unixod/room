@@ -43,11 +43,11 @@ using StripType = std::remove_cv<
  *              [1][2][3]
  *
  *      where:
- *      ->           : denotes siblings relation
- *      /,| and \    : parent-children (from top to down) relation
- *      [some...]    : atom
- *      {}           : set (as you can see, set can contain other sets and atoms)
- *      (head)       : points to first entity (shown on the diagram just for clarity)
+ *        ->           : denotes siblings relation
+ *        /,| and \    : parent-children (from top to down) relation
+ *        [some...]    : atom
+ *        {}           : set (as you can see, set can contain other sets and atoms)
+ *        (head)       : points to first entity (shown on the diagram just for clarity)
  * @endverbatim
  */
 struct AtomSet {
@@ -98,7 +98,10 @@ struct AtomSet {
     std::unique_ptr<AtomSet> sibling;
 
     SetDescription& asSet();
+    const SetDescription& asSet() const;
+
     AtomDescription& asAtom();
+    const AtomDescription& asAtom() const;
 
 private:
     union {
@@ -113,12 +116,26 @@ inline AtomSet::SetDescription& AtomSet::asSet()
     return set;
 }
 
+inline const AtomSet::SetDescription& AtomSet::asSet() const
+{
+    assert(type == Type::Set);
+    return set;
+}
+
 inline AtomSet::AtomDescription& AtomSet::asAtom()
 {
     assert(type == Type::Atom);
 
     return atom;
 }
+
+inline const AtomSet::AtomDescription& AtomSet::asAtom() const
+{
+    assert(type == Type::Atom);
+
+    return atom;
+}
+
 
 } // namespace detail
 } // namespace parser
