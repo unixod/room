@@ -15,13 +15,15 @@ Ast room::parse(std::function<lexer::Token()> generator)
     return makeAst(detail::makeAtomSet(std::move(generator)));
 }
 
+class AstNode {
+public:
+    virtual ~AstNode() {}
+};
 
 struct Subject;
 struct Space;
 struct Emission;
-struct Transformation;
-struct BehaviourExtension;
-struct BehaviourExtension;
+
 
 //Subject makeSubject(Set);
 //Space makeSpace(Set);
@@ -31,36 +33,27 @@ struct BehaviourExtension;
 //BehaviourExtension makeBehaviourExtension(Subject, Space);
 
 
-using Chain = std::unique_ptr<detail::AtomSet>;
-using Tail = std::unique_ptr<detail::AtomSet>;
 
-struct Prefix {
-    std::function<void(Subject &)> buildClauseFor;
-};
 
-std::pair<Prefix, Tail> findPrefix(Chain seq);
+using Handler = std::function<std::unique_ptr<detail::AtomSet>(Subject &sbj, std::unique_ptr<detail::AtomSet> seq)>;
 
-class Subject {
+Handler findPrefix(const detail::AtomSet &seq);
+
+class Subject : public AstNode {
 public:
     Subject(std::unique_ptr<detail::AtomSet> seq)
     {
-        Prefix prefix;
-
         while(seq) {
-            std::tie(prefix, seq) = findPrefix(std::move(seq));
-            prefix.buildClauseFor(*this);
+            auto prefix = findPrefix(*seq);
+            seq = prefix(*this, std::move(seq));
         }
     }
 
     void addEmmision(Subject, Space);
 };
 
-class Space {
-public:
-    Space(detail::AtomSet seq)
-    {
+class Space : public AstNode {
 
-    }
 };
 
 //class PrefixTree {
@@ -107,9 +100,6 @@ public:
 //    Node *root;
 //};
 
-
-using Handler = std::function<void(Subject &sbj, const detail::AtomSet &sq)>;
-
 class Node {
 public:
     virtual ~Node() {}
@@ -137,7 +127,6 @@ protected:
     std::vector<std::unique_ptr<Node>> children;
 };
 
-
 class Root : public Node {
 public:
     Handler search(const detail::AtomSet &elt) const override
@@ -150,13 +139,19 @@ public:
 
         return nullptr;
     }
+
+private:
+    bool check(const detail::AtomSet &) const override
+    {
+        return true;
+    }
 };
 
-class AnyAtom : public Node {
+class Set : public Node {
 
     bool check(const detail::AtomSet &elt) const override
     {
-        return elt.type == detail::AtomSet::Type::Atom;
+        return elt.type == detail::AtomSet::Type::Set;
     }
 
     Handler handler() const override
@@ -167,11 +162,11 @@ class AnyAtom : public Node {
     Handler h;
 };
 
-class Set : public Node {
+class AnyAtom : public Node {
 
     bool check(const detail::AtomSet &elt) const override
     {
-        return elt.type == detail::AtomSet::Type::Set;
+        return elt.type == detail::AtomSet::Type::Atom;
     }
 
     Handler handler() const override
@@ -198,30 +193,55 @@ class EmmisionAtom : public Node {
     Handler h;
 };
 
+class TransformationAtom : public Node {
 
+    bool check(const detail::AtomSet &elt) const override
+    {
+        return (elt.type == detail::AtomSet::Type::Atom) &&
+                (elt.asAtom().name == "->");
+    }
 
+    Handler handler() const override
+    {
+        return h;
+    }
 
-//Handler search(const Node &root, const detail::AtomSet &elt)
-//{
-//    for (auto &&child : root.children) {
-//        if (child->check(elt)) {
-//            if (elt.sibling) {
-//                if (auto hndl = search(*child, *elt.sibling)) {
-//                    return hndl;
-//                }
-//            } else if (child->handler) {
-//                return child->handler;
-//            } else {
-//                break;
-//            }
-//        }
-//    }
+    Handler h;
+};
 
-//    return root.handler;
-//}
+class MultipleTransformationAtom : public Node {
 
+    bool check(const detail::AtomSet &elt) const override
+    {
+        return (elt.type == detail::AtomSet::Type::Atom) &&
+                (elt.asAtom().name == "=>");
+    }
 
-std::pair<Prefix, Tail> findPrefix(std::unique_ptr<detail::AtomSet> seq)
+    Handler handler() const override
+    {
+        return h;
+    }
+
+    Handler h;
+};
+
+class BehaviourExtensionAtom : public Node {
+
+    bool check(const detail::AtomSet &elt) const override
+    {
+        return (elt.type == detail::AtomSet::Type::Atom) &&
+                (elt.asAtom().name == "like");
+    }
+
+    Handler handler() const override
+    {
+        return h;
+    }
+
+    Handler h;
+};
+
+Handler findPrefix(const detail::AtomSet &seq)
 {
 //    static PrefixTree prefixTree{
 //        makeClauseDenotation<Set, EmmisionAtom, Set>([](Subject &sbj, detail::AtomSet seq){
