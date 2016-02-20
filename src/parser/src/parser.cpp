@@ -23,18 +23,6 @@ public:
 
 struct Subject;
 struct Space;
-struct Emission;
-
-
-//Subject makeSubject(Set);
-//Space makeSpace(Set);
-//Emission makeEmission();
-//Transformation makeTransformation(Subject, bool sequential);
-//BehaviourExtension makeBehaviourExtension(Subject);
-//BehaviourExtension makeBehaviourExtension(Subject, Space);
-
-
-
 
 using Handler = std::function<std::unique_ptr<detail::AtomSet>(Subject &sbj, std::unique_ptr<detail::AtomSet> seq)>;
 
@@ -51,55 +39,19 @@ public:
     }
 
     void addEmmision(Subject, Space);
+    void addTransformation(Subject);
+    void addMultyTransformation(Subject);
+    void addBehaviourExtension(Subject);
+    void addBehaviourExtension(Subject, Space);
 };
 
 class Space : public AstNode {
+public:
+    Space(std::unique_ptr<detail::AtomSet> seq)
+    {
 
+    }
 };
-
-//class PrefixTree {
-//public:
-//    template<class... ClauseDenotation>
-//    PrefixTrie(ClauseDenotation&&... clauseDenotation)
-//    {
-//        // insert chain
-//        auto insert = [this](auto&& cd){
-//            auto chain = addChainFor(std::forward<decltype(cd)>(cd));
-////            if (chain.handler == nullptr) {
-////                chain.setHandler(std::forward<ClauseDenotation>(clauseDenotation));
-////            } else {
-////                throw "handler exist";
-////            }
-//        };
-
-//        using swallow = int[];
-//        (void)swallow{
-//            int{}, (insert(std::forward<ClauseDenotation>(clauseDenotation)), int{})...
-//        };
-//    }
-
-//    template<class T, class... Chain>
-//    int addChainFor(const ClauseDenotation<T, Chain...> &clauseDenotation)
-//    {/*
-//        ptr = nullptr;
-
-//        using swallow = int[];
-//        (void)swallow{
-//            int{}, (ptr = insert<Chain>())..., int{}
-//        };
-
-//        return ptr;*/
-//    }
-    
-//private:
-//    template<class T>
-//    Node * insert()
-//    {
-//        root.type
-//    }
-
-//    Node *root;
-//};
 
 
 class Node {
@@ -299,10 +251,30 @@ class BehaviourExtensionAtom : public Node {
     Handler h;
 };
 
+class EqualityAtom : public Node {
+
+    bool check(const detail::AtomSet &elt) const override
+    {
+        return (elt.type == detail::AtomSet::Type::Atom) &&
+                (elt.asAtom().name == "=");
+    }
+
+    Handler handler() const override
+    {
+        return h;
+    }
+
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
+    }
+
+    Handler h;
+};
 
 #define WITH_VARIADIC(expr) \
-    using swallow = int[]; \
-    (void)swallow{int{}, (expr, 0)...}
+    using swallow##__LINE__ = int[]; \
+    (void)swallow__LINE__{int{}, (expr, 0)...}
 
 template<class... T>
 class ClauseDenotaion {
@@ -332,7 +304,7 @@ void insertBranch(Node *node, ClauseDenotaion<T...> &&clause)
 }
 
 template<class... Clause>
-std::unique_ptr<Node> buildTrie(Clause&&... clauses)
+std::unique_ptr<Node> makeTrie(Clause&&... clauses)
 {
     std::unique_ptr<Node> root = std::make_unique<Root>();
 
@@ -345,32 +317,132 @@ std::unique_ptr<Node> buildTrie(Clause&&... clauses)
 
 Handler findPrefix(const detail::AtomSet &seq)
 {
-    auto root = buildTrie(
+    static auto trie = makeTrie(
+        makeClause<Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+//                sbj.setPerspective(...)
+                return seq;
+            }
+        ),
         makeClause<Set, EmmisionAtom, Set>(
-            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) -> std::unique_ptr<detail::AtomSet> {
-//                    sbj.addEmmision(
-//                        Subject{std::move(std::get<0>(seq))},
-//                        Space{std::move(std::get<2>(seq))}
-//                    );
-            })
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto sbjDenotation = std::move(seq);
+                seq = std::move(sbjDenotation->sibling);
+
+                // skip denotation atom
+                assert(seq->type == detail::AtomSet::Type::Atom);
+                seq = std::move(seq->sibling);
+
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto spaceDenotation = std::move(seq);
+                seq = std::move(spaceDenotation->sibling);
+
+                sbj.addEmmision(
+                    Subject{std::move(sbjDenotation)},
+                    Space{std::move(spaceDenotation)}
+                );
+                return seq;
+            }
+        ),
+        makeClause<TransformationAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+                // skip denotation atom
+                assert(seq->type == detail::AtomSet::Type::Atom);
+                seq = std::move(seq->sibling);
+
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto sbjDenotation = std::move(seq);
+                seq = std::move(sbjDenotation->sibling);
+
+                sbj.addTransformation(
+                    Subject{std::move(sbjDenotation)}
+                );
+                return seq;
+            }
+        ),
+        makeClause<MultipleTransformationAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+                // skip denotation atom
+                assert(seq->type == detail::AtomSet::Type::Atom);
+                seq = std::move(seq->sibling);
+
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto sbjDenotation = std::move(seq);
+                seq = std::move(sbjDenotation->sibling);
+
+                sbj.addMultyTransformation(
+                    Subject{std::move(sbjDenotation)}
+                );
+                return seq;
+            }
+        ),
+        makeClause<BehaviourExtensionAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+                // skip denotation atom
+                assert(seq->type == detail::AtomSet::Type::Atom);
+                seq = std::move(seq->sibling);
+
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto sbjDenotation = std::move(seq);
+                seq = std::move(sbjDenotation->sibling);
+
+                sbj.addBehaviourExtension(
+                    Subject{std::move(sbjDenotation)}
+                );
+                return seq;
+            }
+        ),
+        makeClause<BehaviourExtensionAtom, Set, EmmisionAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+                // skip denotation atom
+                assert(seq->type == detail::AtomSet::Type::Atom);
+                seq = std::move(seq->sibling);
+
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto sbjDenotation = std::move(seq);
+                seq = std::move(sbjDenotation->sibling);
+
+                // skip denotation atom
+                assert(seq->type == detail::AtomSet::Type::Atom);
+                seq = std::move(seq->sibling);
+
+                assert(seq->type == detail::AtomSet::Type::Set);
+                auto spaceDenotation = std::move(seq);
+                seq = std::move(spaceDenotation->sibling);
+
+                sbj.addBehaviourExtension(
+                    Subject{std::move(sbjDenotation)},
+                    Space{std::move(spaceDenotation)}
+                );
+                return seq;
+            }
+        ),
+        makeClause<AnyAtom, EqualityAtom, AnyAtom>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+
+                return seq;
+            }
+        ),
+        makeClause<AnyAtom, EqualityAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+
+                return seq;
+            }
+        ),
+        makeClause<Set, EqualityAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+
+                return seq;
+            }
+        ),
+        makeClause<Set, EqualityAtom, AnyAtom>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+
+                return seq;
+            }
+        )
     );
-//    static PrefixTree prefixTree{
-//        makeClauseDenotation<Set, EmmisionAtom, Set>([](Subject &sbj, detail::AtomSet seq){
-////            sbj.addEmmision(
-////                Subject{std::move(std::get<0>(seq))},
-////                Space{std::move(std::get<2>(seq))}
-////            );    // std::get<1>(seq) is an Atom(>>)
-//        })
-//    };
 
-//    auto leafe = tree.add<Set>();
-//    leafe = leafe.add<Emission>();
-//    leafe = leafe.add<Set>();
-//    leafe.setHandler([](Subject &sbj, std::unique_ptr<detail::AtomSet> seq){
-
-//    });
-
-//    tree.select<Set>().select<Emission>().select<Set>().setHandler([](Subject &sbj, std::unique_ptr<detail::AtomSet> seq){
-
-//    });
+    return trie->search(seq);
 }
