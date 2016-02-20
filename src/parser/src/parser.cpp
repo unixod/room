@@ -1,8 +1,9 @@
+#include <vector>
+#include "room/common.h"
 #include "room/parser.h"
 #include "room/parser/ast.h"
 #include "detail/alpha-parser.h"
 #include "detail/atom-set.h"
-#include <vector>
 
 using room::parser::Ast;
 namespace detail = room::parser::detail;
@@ -100,9 +101,24 @@ class Space : public AstNode {
 //    Node *root;
 //};
 
+
 class Node {
 public:
     virtual ~Node() {}
+
+    template<class T>
+    Node * select()
+    {
+        static_assert(std::is_base_of<Node, T>::value, "");
+        for (auto &&child : children) {
+            if (dynamic_cast<std::add_const_t<T> *>(child.get())) {
+                return child.get();
+            }
+        }
+
+        children.emplace_back(new T);
+        return children.back().get();
+    }
 
     virtual Handler search(const detail::AtomSet &elt) const
     {
@@ -118,6 +134,8 @@ public:
 
         return nullptr;
     }
+
+    virtual void setHandler(Handler) = 0;
 
 private:
     virtual Handler handler() const = 0;
@@ -140,10 +158,20 @@ public:
         return nullptr;
     }
 
+    void setHandler(Handler) override
+    {
+        throw std::runtime_error{INTERNAL_ERROR "attempt to setting handler for the root of Prefix trie"};
+    }
+
 private:
     bool check(const detail::AtomSet &) const override
     {
         return true;
+    }
+
+    Handler handler() const override
+    {
+        return nullptr;
     }
 };
 
@@ -159,6 +187,11 @@ class Set : public Node {
         return h;
     }
 
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
+    }
+
     Handler h;
 };
 
@@ -172,6 +205,11 @@ class AnyAtom : public Node {
     Handler handler() const override
     {
         return h;
+    }
+
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
     }
 
     Handler h;
@@ -190,6 +228,11 @@ class EmmisionAtom : public Node {
         return h;
     }
 
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
+    }
+
     Handler h;
 };
 
@@ -204,6 +247,11 @@ class TransformationAtom : public Node {
     Handler handler() const override
     {
         return h;
+    }
+
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
     }
 
     Handler h;
@@ -222,6 +270,11 @@ class MultipleTransformationAtom : public Node {
         return h;
     }
 
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
+    }
+
     Handler h;
 };
 
@@ -238,11 +291,69 @@ class BehaviourExtensionAtom : public Node {
         return h;
     }
 
+    void setHandler(Handler hndl) override
+    {
+        h = std::move(hndl);
+    }
+
     Handler h;
 };
 
+
+#define WITH_VARIADIC(expr) \
+    using swallow = int[]; \
+    (void)swallow{int{}, (expr, 0)...}
+
+template<class... T>
+class ClauseDenotaion {
+public:
+    template<class... Args>
+    ClauseDenotaion(Args&&... args)
+        : handler{std::forward<Args>(args)...}
+    {}
+
+    Handler handler;
+};
+
+template<class... T, class... Args>
+ClauseDenotaion<T...> makeClause(Args&&... args)
+{
+    return {std::forward<Args>(args)...};
+}
+
+template<class... T>
+void insertBranch(Node *node, ClauseDenotaion<T...> &&clause)
+{
+    WITH_VARIADIC(
+        node = node->select<T>()
+    );
+
+    node->setHandler(std::move(clause.handler));
+}
+
+template<class... Clause>
+std::unique_ptr<Node> buildTrie(Clause&&... clauses)
+{
+    std::unique_ptr<Node> root = std::make_unique<Root>();
+
+    WITH_VARIADIC(
+        insertBranch(root.get(), std::forward<Clause>(clauses))
+    );
+
+    return root;
+}
+
 Handler findPrefix(const detail::AtomSet &seq)
 {
+    auto root = buildTrie(
+        makeClause<Set, EmmisionAtom, Set>(
+            [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) -> std::unique_ptr<detail::AtomSet> {
+//                    sbj.addEmmision(
+//                        Subject{std::move(std::get<0>(seq))},
+//                        Space{std::move(std::get<2>(seq))}
+//                    );
+            })
+    );
 //    static PrefixTree prefixTree{
 //        makeClauseDenotation<Set, EmmisionAtom, Set>([](Subject &sbj, detail::AtomSet seq){
 ////            sbj.addEmmision(
@@ -259,8 +370,7 @@ Handler findPrefix(const detail::AtomSet &seq)
 
 //    });
 
-//    tree.add<Set>().add<Emission>().add<Set>() .setHandler([](Subject &sbj, std::unique_ptr<detail::AtomSet> seq){
+//    tree.select<Set>().select<Emission>().select<Set>().setHandler([](Subject &sbj, std::unique_ptr<detail::AtomSet> seq){
 
 //    });
 }
-

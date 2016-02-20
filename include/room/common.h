@@ -8,6 +8,6 @@
     __FILE__ ":" STRINGIFY(__LINE__) ", "
 
 #define INTERNAL_ERROR \
-    __FILE__ ":" STRINGIFY(__LINE__) ": internal error: "
+    ERROR_MSG ": internal error: "
 
 #endif // ROOM_COMMON_H
