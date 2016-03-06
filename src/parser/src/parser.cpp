@@ -26,17 +26,24 @@ struct Space;
 
 using Handler = std::function<std::unique_ptr<detail::AtomSet>(Subject &sbj, std::unique_ptr<detail::AtomSet> seq)>;
 
-Handler findPrefix(const detail::AtomSet &seq);
+class Environment {
+public:
+    const detail::AtomSet& resolveInitialEntity(const detail::AtomSet &x) const;
+};
+
+Handler findPrefix(const Environment &env, const detail::AtomSet &seq);
 
 class Subject : public AstNode {
 public:
     Subject(std::unique_ptr<detail::AtomSet> seq)
     {
         while(seq) {
-            auto prefix = findPrefix(*seq);
+            auto prefix = findPrefix(environment(), *seq);
             seq = prefix(*this, std::move(seq));
         }
     }
+
+    const Environment& environment() const;
 
     void addEmmision(Subject, Space);
     void addTransformation(Subject);
@@ -52,7 +59,6 @@ public:
 
     }
 };
-
 
 class Node {
 public:
@@ -72,11 +78,13 @@ public:
         return children.back().get();
     }
 
-    virtual Handler search(const detail::AtomSet &elt) const
-    {
+    virtual Handler search(const Environment &env, const detail::AtomSet &x) const
+    {    
+        auto&& elt = env.resolveInitialEntity(x);
+
         if (check(elt)) {
             if (elt.sibling) for (auto &&child : children) {
-                if (auto h = child->search(*elt.sibling)) {
+                if (auto h = child->search(env, *elt.sibling)) {
                     return h;
                 }
             }
@@ -99,10 +107,10 @@ protected:
 
 class Root : public Node {
 public:
-    Handler search(const detail::AtomSet &elt) const override
+    Handler search(const Environment &env, const detail::AtomSet &elt) const override
     {
         for (auto &&child : children) {
-            if (auto h = child->search(elt)) {
+            if (auto h = child->search(env, elt)) {
                 return h;
             }
         }
@@ -277,24 +285,18 @@ class EqualityAtom : public Node {
     (void)swallow__LINE__{int{}, (expr, 0)...}
 
 template<class... T>
-class ClauseDenotaion {
+class Clause {
 public:
     template<class... Args>
-    ClauseDenotaion(Args&&... args)
+    Clause(Args&&... args)
         : handler{std::forward<Args>(args)...}
     {}
 
     Handler handler;
 };
 
-template<class... T, class... Args>
-ClauseDenotaion<T...> makeClause(Args&&... args)
-{
-    return {std::forward<Args>(args)...};
-}
-
 template<class... T>
-void insertBranch(Node *node, ClauseDenotaion<T...> &&clause)
+void insertClause(Node *node, Clause<T...> &&clause)
 {
     WITH_VARIADIC(
         node = node->select<T>()
@@ -309,23 +311,26 @@ std::unique_ptr<Node> makeTrie(Clause&&... clauses)
     std::unique_ptr<Node> root = std::make_unique<Root>();
 
     WITH_VARIADIC(
-        insertBranch(root.get(), std::forward<Clause>(clauses))
+        insertClause(root.get(), std::forward<Clause>(clauses))
     );
 
     return root;
 }
 
-Handler findPrefix(const detail::AtomSet &seq)
+Handler findPrefix(const Environment &env, const detail::AtomSet &seq)
 {
     static auto trie = makeTrie(
-        makeClause<Set>(
+        Clause<Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+//                auto& env = sbj.environment();
 //                sbj.setPerspective(...)
                 return seq;
             }
-        ),
-        makeClause<Set, EmmisionAtom, Set>(
+        },
+        Clause<Set, EmmisionAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
+//                auto& env = sbj.currentPerspectiveEnvironment();
+
                 assert(seq->type == detail::AtomSet::Type::Set);
                 auto sbjDenotation = std::move(seq);
                 seq = std::move(sbjDenotation->sibling);
@@ -344,8 +349,8 @@ Handler findPrefix(const detail::AtomSet &seq)
                 );
                 return seq;
             }
-        ),
-        makeClause<TransformationAtom, Set>(
+        },
+        Clause<TransformationAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
                 // skip denotation atom
                 assert(seq->type == detail::AtomSet::Type::Atom);
@@ -360,8 +365,8 @@ Handler findPrefix(const detail::AtomSet &seq)
                 );
                 return seq;
             }
-        ),
-        makeClause<MultipleTransformationAtom, Set>(
+        },
+        Clause<MultipleTransformationAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
                 // skip denotation atom
                 assert(seq->type == detail::AtomSet::Type::Atom);
@@ -376,8 +381,8 @@ Handler findPrefix(const detail::AtomSet &seq)
                 );
                 return seq;
             }
-        ),
-        makeClause<BehaviourExtensionAtom, Set>(
+        },
+        Clause<BehaviourExtensionAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
                 // skip denotation atom
                 assert(seq->type == detail::AtomSet::Type::Atom);
@@ -392,8 +397,8 @@ Handler findPrefix(const detail::AtomSet &seq)
                 );
                 return seq;
             }
-        ),
-        makeClause<BehaviourExtensionAtom, Set, EmmisionAtom, Set>(
+        },
+        Clause<BehaviourExtensionAtom, Set, EmmisionAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
                 // skip denotation atom
                 assert(seq->type == detail::AtomSet::Type::Atom);
@@ -417,32 +422,32 @@ Handler findPrefix(const detail::AtomSet &seq)
                 );
                 return seq;
             }
-        ),
-        makeClause<AnyAtom, EqualityAtom, AnyAtom>(
+        },
+        Clause<AnyAtom, EqualityAtom, AnyAtom> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
 
                 return seq;
             }
-        ),
-        makeClause<AnyAtom, EqualityAtom, Set>(
+        },
+        Clause<AnyAtom, EqualityAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
 
                 return seq;
             }
-        ),
-        makeClause<Set, EqualityAtom, Set>(
+        },
+        Clause<Set, EqualityAtom, Set> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
 
                 return seq;
             }
-        ),
-        makeClause<Set, EqualityAtom, AnyAtom>(
+        },
+        Clause<Set, EqualityAtom, AnyAtom> {
             [](Subject &sbj, std::unique_ptr<detail::AtomSet> seq) {
 
                 return seq;
             }
-        )
+        }
     );
 
-    return trie->search(seq);
+    return trie->search(env, seq);
 }
